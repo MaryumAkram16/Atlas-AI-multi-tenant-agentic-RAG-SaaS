@@ -26,6 +26,8 @@ until the Cloud Run deployment in [docs/deployment.md](docs/deployment.md) is do
   documents with members (read or write); applies to the next question.
 - **In-product evaluations**: owners and admins build question sets from their
   own documents and benchmark the agent (facts, abstention, citations, latency).
+- **Admin pages**: usage and plan limits, the audit log, and evaluation runs
+  ([screenshot](docs/screenshots/evaluations.png)).
 - **Follow-up questions**: a follow-up ("And when do they expire?") is rewritten
   into a standalone question from the conversation before searching.
 - **Hardening**: trigger-written audit logs, quotas and rate limits, revocation

@@ -165,3 +165,107 @@ export interface ChunkPreview {
   page_end: number | null;
   content: string;
 }
+
+export interface UsageTotals {
+  questions: number;
+  prompt_tokens: number;
+  completion_tokens: number;
+  estimated_cost: string | null;
+}
+
+export interface QuotaItem {
+  limit: number | null;
+  used: number;
+}
+
+export interface Usage {
+  period_days: number;
+  me: UsageTotals;
+  organization: UsageTotals | null;
+  documents: number | null;
+  storage_bytes: number | null;
+  quota: {
+    plan: string;
+    documents: QuotaItem;
+    storage_bytes: QuotaItem;
+    questions_per_day: QuotaItem;
+  } | null;
+}
+
+export interface AuditLog {
+  id: number;
+  actor_id: string | null;
+  actor_type: "user" | "system";
+  action: string;
+  resource_type: string;
+  resource_id: string | null;
+  metadata: Record<string, unknown>;
+  created_at: string;
+}
+
+export interface EvalCase {
+  id: string;
+  question: string;
+  expected_facts: string[];
+  expected_document_ids: string[];
+  should_abstain: boolean;
+  created_at: string;
+}
+
+export interface EvalDataset {
+  id: string;
+  name: string;
+  description: string | null;
+  case_count: number;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+  cases?: EvalCase[];
+}
+
+export interface EvalMetrics {
+  cases: number;
+  answered_rate: number | null;
+  fact_accuracy: number | null;
+  false_abstention: number | null;
+  abstention_accuracy: number | null;
+  evidence_hit_rate: number | null;
+  citation_precision: number | null;
+  latency_p50_ms: number | null;
+  latency_p95_ms: number | null;
+  prompt_tokens: number;
+  completion_tokens: number;
+  estimated_cost: number | null;
+}
+
+export interface EvalResult {
+  case_id: string | null;
+  position: number;
+  question: string;
+  status: string;
+  answer: string;
+  abstained: boolean;
+  fact_hit: boolean | null;
+  abstention_correct: boolean | null;
+  evidence_hit: boolean | null;
+  cited_document_ids: string[];
+  latency_ms: number;
+  prompt_tokens: number;
+  completion_tokens: number;
+}
+
+export interface EvalRun {
+  id: string;
+  dataset_id: string | null;
+  dataset_name: string;
+  status: "running" | "succeeded" | "failed";
+  config: Record<string, unknown>;
+  metrics: EvalMetrics | null;
+  case_count: number;
+  error: string | null;
+  created_by: string;
+  created_at: string;
+  finished_at: string | null;
+  results?: EvalResult[];
+  hidden_results?: number;
+}

@@ -90,6 +90,25 @@ test("new user: sign up, create org, invite, upload, chat with citations", async
   // The conversation is saved and listed.
   await expect(memberPage.getByLabel("Conversations")).toContainText("How many days");
 
+  // 6. Owner benchmarks the workspace on its own document.
+  await ownerPage.getByRole("link", { name: "Evaluations" }).click();
+  await ownerPage.getByLabel("Dataset name").fill("Refunds");
+  await ownerPage.getByLabel("Case question").fill("How many days do customers have to request a refund?");
+  await ownerPage.getByLabel("Expected facts").fill("7 days");
+  await ownerPage.getByRole("button", { name: "Add to list" }).click();
+  await ownerPage.getByRole("button", { name: "Create dataset" }).click();
+  await expect(ownerPage.getByLabel("Evaluation datasets")).toContainText("Refunds");
+  await ownerPage.getByLabel("Evaluation datasets").getByRole("button", { name: "Run" }).click();
+  const runDetail = ownerPage.getByLabel("Run detail");
+  await expect(runDetail).toContainText("succeeded", { timeout: 60_000 });
+  await expect(runDetail.getByLabel("Run results")).toContainText("pass");
+
+  // Usage counts the member's question; the audit log records the sharing.
+  await ownerPage.getByRole("link", { name: "Usage" }).click();
+  await expect(ownerPage.getByRole("heading", { name: "Whole workspace" })).toBeVisible();
+  await ownerPage.getByRole("link", { name: "Audit log" }).click();
+  await expect(ownerPage.getByLabel("Audit log")).toContainText("Document permission granted");
+
   await ownerCtx.close();
   await memberCtx.close();
 });

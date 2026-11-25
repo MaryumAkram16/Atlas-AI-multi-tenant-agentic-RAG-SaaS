@@ -5,11 +5,14 @@ import { Spinner } from "./components/ui";
 import { AuthProvider, useAuth } from "./hooks/useAuth";
 import { OrgsProvider } from "./hooks/useOrgs";
 import { LoginPage, SignupPage } from "./pages/AuthPages";
+import { AuditLogPage } from "./pages/AuditLogPage";
 import { ChatPage } from "./pages/ChatPage";
+import { EvaluationsPage } from "./pages/EvaluationsPage";
 import { InvitePage } from "./pages/InvitePage";
 import { KnowledgeBasePage } from "./pages/KnowledgeBasePage";
 import { MembersPage } from "./pages/MembersPage";
 import { OrgPickerPage } from "./pages/OrgPickerPage";
+import { UsagePage } from "./pages/UsagePage";
 
 function RequireAuth({ children }: { children: ReactNode }) {
   const { session, loading } = useAuth();
@@ -38,6 +41,9 @@ export function App() {
             <Route path="chat/:conversationId" element={<ChatPage />} />
             <Route path="documents" element={<KnowledgeBasePage />} />
             <Route path="members" element={<MembersPage />} />
+            <Route path="usage" element={<UsagePage />} />
+            <Route path="audit" element={<AuditLogPage />} />
+            <Route path="evaluations" element={<EvaluationsPage />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

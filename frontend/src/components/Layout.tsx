@@ -48,6 +48,9 @@ export function Layout() {
             <NavLink to={`/o/${org.id}/chat`}>Chat</NavLink>
             <NavLink to={`/o/${org.id}/documents`}>Knowledge base</NavLink>
             {can.manageMembers(org.role) && <NavLink to={`/o/${org.id}/members`}>Members</NavLink>}
+            {can.manageMembers(org.role) && <NavLink to={`/o/${org.id}/evaluations`}>Evaluations</NavLink>}
+            <NavLink to={`/o/${org.id}/usage`}>Usage</NavLink>
+            {can.manageMembers(org.role) && <NavLink to={`/o/${org.id}/audit`}>Audit log</NavLink>}
           </nav>
         )}
         <div className="sidebar-foot">

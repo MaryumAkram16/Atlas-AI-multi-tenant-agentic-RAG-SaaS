@@ -140,3 +140,21 @@ input:focus, select:focus, textarea:focus, button:focus-visible {
 }
 .sharing { display: flex; flex-direction: column; gap: 0.5rem; }
 .sharing h4 { margin: 0.25rem 0 0; font-size: 0.9rem; }
+
+/* Admin pages: stat tiles, quota meters, evaluation forms */
+.card-title { margin: 0 0 0.75rem; font-size: 1rem; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.75rem; }
+.tile { display: flex; flex-direction: column; gap: 0.15rem; padding: 0.75rem; border: 1px solid var(--line); border-radius: var(--radius); background: var(--navy-2); }
+.tile-value { font-size: 1.4rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.tile-label { font-size: 0.85rem; }
+.tile-hint { font-size: 0.75rem; color: var(--slate); }
+.quota { display: flex; flex-direction: column; gap: 0.3rem; margin-bottom: 0.75rem; }
+.between { justify-content: space-between; }
+.meter { height: 8px; border-radius: 4px; background: rgba(148, 163, 184, 0.25); overflow: hidden; }
+.meter-fill { display: block; height: 100%; border-radius: 4px; background: var(--teal); }
+.meter-warn { background: #F59E0B; }
+.quota-warn { font-weight: 600; }
+.case-form input:not([type="checkbox"]) { min-width: 14rem; flex: 1; }
+.answer-cell { max-width: 32rem; white-space: pre-wrap; }
+.nowrap { white-space: nowrap; }
+.link { background: none; border: 0; padding: 0; color: inherit; text-decoration: underline; cursor: pointer; font: inherit; }
