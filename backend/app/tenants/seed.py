@@ -57,9 +57,16 @@ def seed(conn: psycopg.Connection) -> None:
         for org_id, user, role, inviter in MEMBERSHIPS:
             conn.execute(
                 "INSERT INTO public.organization_members"
-                " (organization_id, user_id, role, status, invited_by)"
-                " VALUES (%s, %s, %s, 'active', %s)"
+                " (organization_id, user_id, role, status, invited_by, email)"
+                " VALUES (%s, %s, %s, 'active', %s, %s)"
                 " ON CONFLICT (organization_id, user_id) DO UPDATE"
-                " SET role = EXCLUDED.role, status = 'active', revoked_at = NULL",
-                (org_id, USERS[user].id, role, USERS[inviter].id if inviter else None),
+                " SET role = EXCLUDED.role, status = 'active', revoked_at = NULL,"
+                " email = EXCLUDED.email",
+                (
+                    org_id,
+                    USERS[user].id,
+                    role,
+                    USERS[inviter].id if inviter else None,
+                    USERS[user].email,
+                ),
             )

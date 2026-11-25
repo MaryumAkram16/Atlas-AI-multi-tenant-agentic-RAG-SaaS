@@ -92,6 +92,10 @@ class MessageOut(BaseModel):
     status: AnswerStatus | None
     created_at: datetime
     citations: list[Citation]
+    evidence_status: EvidenceStatus | None = None
+    conflicts: list[Conflict] = []
+    retrieval_attempts: int | None = None
+    trace_id: str | None = None
 
 
 class ConversationDetail(ConversationOut):

@@ -192,6 +192,25 @@ async def insert_version(
     )
 
 
+async def get_chunk(
+    conn: AsyncConnection, org_id: UUID, document_id: UUID, chunk_id: UUID
+) -> Row | None:
+    """One chunk for a source preview. RLS (document_access) decides visibility."""
+    return await _one(
+        conn,
+        """
+        SELECT c.id AS chunk_id, c.document_id, d.title AS document_title,
+               c.document_version_id AS version_id, v.version, v.effective_date,
+               c.section, c.page_start, c.page_end, c.content
+        FROM document_chunks c
+        JOIN document_versions v ON v.id = c.document_version_id
+        JOIN documents d ON d.id = c.document_id
+        WHERE c.organization_id = %s AND c.document_id = %s AND c.id = %s
+        """,
+        (org_id, document_id, chunk_id),
+    )
+
+
 # ---------- jobs ----------
 
 

@@ -103,7 +103,16 @@ async def get_conversation(conversation_id: UUID, ctx: Org, db: DB) -> Conversat
     by_message: dict[UUID, list[Citation]] = defaultdict(list)
     for c in citations:
         by_message[c.pop("message_id")].append(Citation(**c))
-    return ConversationDetail(
-        **conv,
-        messages=[MessageOut(**m, citations=by_message.get(m["id"], [])) for m in messages],
-    )
+
+    def message(m: dict) -> MessageOut:
+        meta = m.pop("metadata") or {}
+        return MessageOut(
+            **m,
+            citations=by_message.get(m["id"], []),
+            evidence_status=meta.get("evidence_status"),
+            conflicts=meta.get("conflicts", []),
+            retrieval_attempts=meta.get("retrieval_attempts"),
+            trace_id=meta.get("trace_id"),
+        )
+
+    return ConversationDetail(**conv, messages=[message(m) for m in messages])

@@ -4,11 +4,11 @@ Multi-tenant agentic RAG SaaS. Organizations upload documents (PDF, DOCX, TXT,
 MD) and ask questions; answers are grounded with citations, flag version
 conflicts, and abstain when evidence is weak.
 
-> **Status: Week 4, agentic RAG.** Multi-tenant foundation with RLS (Week 1),
+> **Status: Week 5, web app.** Multi-tenant foundation with RLS (Week 1),
 > document ingestion into Qdrant (Week 2), hybrid search with a Postgres
-> permission recheck (Week 3), and a bounded LangGraph agent that plans
-> retrieval, rewrites weak queries, resolves version conflicts, verifies
-> citations and abstains when evidence is weak (Week 4). No frontend yet.
+> permission recheck (Week 3), a bounded LangGraph agent with conflict handling,
+> citation checks and abstention (Week 4), and a React app with Supabase Auth
+> for sign-up, workspaces, the knowledge base, chat and member admin (Week 5).
 > Features, targets and metrics in the
 > [blueprint](docs/Atlas_AI_RAG_Project_Blueprint.pdf) are planned, not
 > implemented or measured.
@@ -32,10 +32,15 @@ cp .env.example .env
 docker compose up --build
 ```
 
+Then open **http://localhost:8080**, create an account, create a workspace,
+upload a document from `sample-data/acme/` and ask a question.
+
 This starts:
 
 | Service | URL / port | Notes |
 |---------|-----------|-------|
+| `web` | http://localhost:8080 | React app; proxies `/v1` to the API and `/auth/v1` to Supabase Auth |
+| `auth` | localhost:9999 | Supabase Auth (GoTrue); local accounts are auto-confirmed |
 | `migrate` | (exits) | Runs migrations, enables the `atlas_api` login, then exits |
 | `api` | http://localhost:8000 | FastAPI; docs at `/docs` |
 | `worker` | (no port) | Ingestion worker: parse, chunk, embed, index, publish |
@@ -166,9 +171,23 @@ New migration (plain SQL in `op.execute`, see `backend/migrations/versions`):
 alembic revision -m "describe change"
 ```
 
-CI (`.github/workflows/ci.yml`) runs lint, format check, and the unit, security
-and migration tests against Postgres, then boots and seeds the compose stack
-and runs the integration tests against it.
+Frontend (from `frontend/`; `npm run dev` serves on :5173 and proxies to the API
+on :8000 and Auth on :9999):
+
+```bash
+npm ci && npm run typecheck && npm test
+```
+
+End-to-end UI tests with Playwright against the running compose stack:
+
+```bash
+npx playwright test
+```
+
+CI (`.github/workflows/ci.yml`) runs backend lint and tests against Postgres
+and Qdrant, frontend typecheck, unit tests and build, then boots the whole
+compose stack and runs the API integration tests and the Playwright flow
+(sign up, create a workspace, invite, upload, chat with citations).
 
 ## Repository layout
 
@@ -179,7 +198,8 @@ backend/app/        api, auth, tenants, documents, ingestion, retrieval,
                     observability
 backend/migrations  Alembic migrations (plain SQL, RLS policies)
 backend/tests/      unit, integration, security, e2e
-frontend/src/       React app (Week 5)
+frontend/src/       React app: pages, features (chat, documents), hooks, services
+frontend/e2e/       Playwright end-to-end tests
 evaluations/        datasets, benchmarks, reports
 docs/               architecture, security, api, evaluation, decisions (ADRs)
 ```

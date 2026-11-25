@@ -149,7 +149,7 @@ async def conversation_messages(conn: AsyncConnection, conv_id: UUID) -> list[Ro
     return await _all(
         conn,
         """
-        SELECT id, role, content, status, created_at FROM messages
+        SELECT id, role, content, status, created_at, metadata FROM messages
         WHERE conversation_id = %s ORDER BY created_at, id
         """,
         (conv_id,),

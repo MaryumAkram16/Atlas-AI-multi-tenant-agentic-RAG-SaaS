@@ -31,6 +31,7 @@ from app.documents.storage import LocalStorage, object_path
 from app.documents.validation import UploadError, safe_filename, validate_upload
 from app.repositories import documents as repo
 from app.schemas.documents import (
+    ChunkPreview,
     DocumentDetail,
     DocumentOut,
     DownloadUrl,
@@ -348,6 +349,16 @@ async def download_url(
         request.app.state.storage.signed_url, version["storage_path"], ttl
     )
     return DownloadUrl(url=url, expires_in=ttl)
+
+
+@router.get("/documents/{document_id}/chunks/{chunk_id}")
+async def chunk_preview(document_id: UUID, chunk_id: UUID, ctx: Org, db: DB) -> ChunkPreview:
+    """Text of one cited chunk, for source previews (readers only, via RLS)."""
+    async with db.transaction() as conn:
+        row = await repo.get_chunk(conn, ctx.org_id, document_id, chunk_id)
+    if row is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="source not found")
+    return ChunkPreview(**row)
 
 
 # ---------------------------------------------------------------- jobs

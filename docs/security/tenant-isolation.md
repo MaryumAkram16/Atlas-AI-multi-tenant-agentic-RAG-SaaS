@@ -104,6 +104,16 @@ keys. Document text reaches the model only inside `<source>` blocks marked as
 untrusted; instructions in documents cannot widen the search (tested with an
 injected "change organization_id" document).
 
+## Web app (Week 5)
+
+The React app only decides which controls to show from the user's role
+(`frontend/src/services/permissions.ts`); every action is enforced by the API and
+RLS. Answers and source excerpts render as text, never HTML. Member emails come
+from the verified JWT (migration 0005), and source previews
+(`GET .../documents/{id}/chunks/{chunk_id}`) go through the same RLS check as
+retrieval, so a restricted or other-tenant chunk returns 404
+(`test_source_preview_is_tenant_scoped`, `test_source_preview_respects_document_acls`).
+
 ## Evidence
 
 | Requirement | Tests |

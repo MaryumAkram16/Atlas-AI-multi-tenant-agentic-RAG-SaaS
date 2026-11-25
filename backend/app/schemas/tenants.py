@@ -35,6 +35,7 @@ class MemberOut(BaseModel):
     id: UUID
     organization_id: UUID
     user_id: UUID
+    email: str | None
     role: Role
     status: str
     invited_by: UUID | None

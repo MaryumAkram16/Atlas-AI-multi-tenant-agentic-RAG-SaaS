@@ -61,6 +61,19 @@ class UploadAccepted(BaseModel):
     job: JobOut
 
 
+class ChunkPreview(BaseModel):
+    chunk_id: UUID
+    document_id: UUID
+    document_title: str
+    version_id: UUID
+    version: int
+    effective_date: date | None
+    section: str | None
+    page_start: int | None
+    page_end: int | None
+    content: str
+
+
 class DownloadUrl(BaseModel):
     url: str
     expires_in: int

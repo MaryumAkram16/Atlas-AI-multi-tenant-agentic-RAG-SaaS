@@ -62,7 +62,7 @@ async def active_membership(conn: AsyncConnection, org_id: UUID, user_id: UUID) 
     return await _one(
         conn,
         """
-        SELECT id, organization_id, user_id, role, status, invited_by, created_at, revoked_at
+        SELECT id, organization_id, user_id, email, role, status, invited_by, created_at, revoked_at
         FROM organization_members
         WHERE organization_id = %s AND user_id = %s AND status = 'active'
         """,
@@ -74,7 +74,7 @@ async def list_members(conn: AsyncConnection, org_id: UUID) -> list[Row]:
     return await _all(
         conn,
         """
-        SELECT id, organization_id, user_id, role, status, invited_by, created_at, revoked_at
+        SELECT id, organization_id, user_id, email, role, status, invited_by, created_at, revoked_at
         FROM organization_members
         WHERE organization_id = %s
         ORDER BY created_at, id
@@ -90,7 +90,7 @@ async def get_member_in_org(conn: AsyncConnection, org_id: UUID, member_id: UUID
     return await _one(
         conn,
         """
-        SELECT id, organization_id, user_id, role, status, invited_by, created_at, revoked_at
+        SELECT id, organization_id, user_id, email, role, status, invited_by, created_at, revoked_at
         FROM organization_members
         WHERE organization_id = %s AND id = %s
         """,
@@ -102,7 +102,7 @@ async def get_member(conn: AsyncConnection, member_id: UUID) -> Row | None:
     return await _one(
         conn,
         """
-        SELECT id, organization_id, user_id, role, status, invited_by, created_at, revoked_at
+        SELECT id, organization_id, user_id, email, role, status, invited_by, created_at, revoked_at
         FROM organization_members
         WHERE id = %s
         """,
@@ -118,7 +118,8 @@ async def update_member_role(
         """
         UPDATE organization_members SET role = %s
         WHERE organization_id = %s AND id = %s
-        RETURNING id, organization_id, user_id, role, status, invited_by, created_at, revoked_at
+        RETURNING id, organization_id, user_id, email, role, status, invited_by, created_at,
+                  revoked_at
         """,
         (role, org_id, member_id),
     )
@@ -130,7 +131,8 @@ async def revoke_member(conn: AsyncConnection, org_id: UUID, member_id: UUID) ->
         """
         UPDATE organization_members SET status = 'revoked', revoked_at = now()
         WHERE organization_id = %s AND id = %s
-        RETURNING id, organization_id, user_id, role, status, invited_by, created_at, revoked_at
+        RETURNING id, organization_id, user_id, email, role, status, invited_by, created_at,
+                  revoked_at
         """,
         (org_id, member_id),
     )

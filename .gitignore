@@ -23,3 +23,6 @@ node_modules/
 .vscode/
 .DS_Store
 .storage/
+frontend/dist/
+frontend/test-results/
+frontend/playwright-report/

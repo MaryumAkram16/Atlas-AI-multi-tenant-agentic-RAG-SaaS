@@ -10,6 +10,8 @@ x-backend-env: &backend-env
   WORKER_DATABASE_URL: postgresql://atlas_worker:${ATLAS_WORKER_DB_PASSWORD}@db:5432/postgres
   QDRANT_URL: http://qdrant:6333
   LOCAL_STORAGE_PATH: /data/storage
+  # Signed download links point at the web origin, which proxies /v1.
+  PUBLIC_BASE_URL: http://localhost:${WEB_PORT:-8080}
 
 x-backend: &backend
   build: ./backend
@@ -59,11 +61,63 @@ services:
       - "${POSTGRES_PORT:-54322}:5432"
     volumes:
       - db-data:/var/lib/postgresql/data
+      # Local only: password for Supabase Auth's database role.
+      - ./infrastructure/local/supabase-roles.sql:/docker-entrypoint-initdb.d/init-scripts/99-roles.sql:ro
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "postgres", "-h", "localhost"]
       interval: 5s
       timeout: 3s
       retries: 20
+
+  # Supabase Auth (GoTrue): real sign-up and sign-in locally. Tokens are HS256
+  # with the same secret, issuer and audience the API verifies.
+  auth:
+    image: supabase/gotrue:v2.177.0
+    environment:
+      GOTRUE_API_HOST: 0.0.0.0
+      PORT: "9999"
+      API_EXTERNAL_URL: http://localhost:${WEB_PORT:-8080}/auth/v1
+      GOTRUE_SITE_URL: http://localhost:${WEB_PORT:-8080}
+      GOTRUE_DB_DRIVER: postgres
+      GOTRUE_DB_DATABASE_URL: postgres://supabase_auth_admin:${POSTGRES_PASSWORD:-postgres}@db:5432/postgres
+      GOTRUE_JWT_SECRET: ${SUPABASE_JWT_SECRET}
+      GOTRUE_JWT_ISSUER: ${SUPABASE_JWT_ISSUER}
+      GOTRUE_JWT_AUD: ${SUPABASE_JWT_AUDIENCE:-authenticated}
+      GOTRUE_JWT_DEFAULT_GROUP_NAME: authenticated
+      GOTRUE_JWT_EXP: "3600"
+      GOTRUE_EXTERNAL_EMAIL_ENABLED: "true"
+      # Local only: no email server, so accounts are confirmed immediately.
+      GOTRUE_MAILER_AUTOCONFIRM: ${AUTH_AUTOCONFIRM:-true}
+      GOTRUE_DISABLE_SIGNUP: "false"
+    ports:
+      - "${AUTH_PORT:-9999}:9999"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9999/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  # The React app on one origin with the API (/v1) and Auth (/auth/v1).
+  web:
+    build:
+      context: ./frontend
+      args:
+        VITE_SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
+    ports:
+      - "${WEB_PORT:-8080}:80"
+    depends_on:
+      api:
+        condition: service_healthy
+      auth:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost/"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
 
   qdrant:
     image: qdrant/qdrant:v1.20.0

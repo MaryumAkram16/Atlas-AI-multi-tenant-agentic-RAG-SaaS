@@ -12,3 +12,4 @@ sequentially, and add it to the index below.
 | [0005](0005-ingestion-pipeline.md) | Ingestion pipeline, worker role and document ACLs | Accepted |
 | [0006](0006-baseline-rag.md) | Baseline RAG: retrieval, recheck, generation and citations | Accepted |
 | [0007](0007-langgraph-agent.md) | LangGraph agent: bounded graph, immutable auth context, deterministic checks | Accepted |
+| [0008](0008-frontend-and-local-auth.md) | Frontend: React SPA on one origin, real Supabase Auth locally | Accepted |
