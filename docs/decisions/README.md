@@ -16,3 +16,4 @@ sequentially, and add it to the index below.
 | [0009](0009-hardening.md) | Hardening: audit triggers, Postgres limits, revocation, telemetry, injection filter | Accepted |
 | [0010](0010-deployment.md) | Deployment: Cloud Run, Supabase, Qdrant Cloud, Vercel | Accepted |
 | [0011](0011-document-sharing.md) | Document sharing and visibility changes | Accepted |
+| [0012](0012-in-product-evaluations.md) | In-product evaluations | Accepted |

@@ -140,6 +140,108 @@
         "title": "Body_upload_version_v1_organizations__org_id__documents__document_id__versions_post",
         "type": "object"
       },
+      "CaseIn": {
+        "properties": {
+          "expected_document_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 20,
+            "title": "Expected Document Ids",
+            "type": "array"
+          },
+          "expected_facts": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 20,
+            "title": "Expected Facts",
+            "type": "array"
+          },
+          "question": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Question",
+            "type": "string"
+          },
+          "should_abstain": {
+            "default": false,
+            "title": "Should Abstain",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "question"
+        ],
+        "title": "CaseIn",
+        "type": "object"
+      },
+      "CaseOut": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "expected_document_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Expected Document Ids",
+            "type": "array"
+          },
+          "expected_facts": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Expected Facts",
+            "type": "array"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "question": {
+            "title": "Question",
+            "type": "string"
+          },
+          "should_abstain": {
+            "title": "Should Abstain",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "question",
+          "expected_facts",
+          "expected_document_ids",
+          "should_abstain",
+          "created_at"
+        ],
+        "title": "CaseOut",
+        "type": "object"
+      },
+      "CasesAdd": {
+        "properties": {
+          "cases": {
+            "items": {
+              "$ref": "#/components/schemas/CaseIn"
+            },
+            "maxItems": 500,
+            "minItems": 1,
+            "title": "Cases",
+            "type": "array"
+          }
+        },
+        "required": [
+          "cases"
+        ],
+        "title": "CasesAdd",
+        "type": "object"
+      },
       "ChatRequest": {
         "additionalProperties": false,
         "properties": {
@@ -640,6 +742,157 @@
           "updated_at"
         ],
         "title": "ConversationOut",
+        "type": "object"
+      },
+      "DatasetCreate": {
+        "properties": {
+          "cases": {
+            "items": {
+              "$ref": "#/components/schemas/CaseIn"
+            },
+            "maxItems": 500,
+            "title": "Cases",
+            "type": "array"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "DatasetCreate",
+        "type": "object"
+      },
+      "DatasetDetail": {
+        "properties": {
+          "case_count": {
+            "title": "Case Count",
+            "type": "integer"
+          },
+          "cases": {
+            "items": {
+              "$ref": "#/components/schemas/CaseOut"
+            },
+            "title": "Cases",
+            "type": "array"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "created_by": {
+            "format": "uuid",
+            "title": "Created By",
+            "type": "string"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "description",
+          "case_count",
+          "created_by",
+          "created_at",
+          "updated_at",
+          "cases"
+        ],
+        "title": "DatasetDetail",
+        "type": "object"
+      },
+      "DatasetOut": {
+        "properties": {
+          "case_count": {
+            "title": "Case Count",
+            "type": "integer"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "created_by": {
+            "format": "uuid",
+            "title": "Created By",
+            "type": "string"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "description",
+          "case_count",
+          "created_by",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "DatasetOut",
         "type": "object"
       },
       "DocumentDetail": {
@@ -1588,6 +1841,112 @@
         "title": "ReadyResponse",
         "type": "object"
       },
+      "ResultOut": {
+        "properties": {
+          "abstained": {
+            "title": "Abstained",
+            "type": "boolean"
+          },
+          "abstention_correct": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Abstention Correct"
+          },
+          "answer": {
+            "title": "Answer",
+            "type": "string"
+          },
+          "case_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Case Id"
+          },
+          "cited_document_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Cited Document Ids",
+            "type": "array"
+          },
+          "completion_tokens": {
+            "title": "Completion Tokens",
+            "type": "integer"
+          },
+          "evidence_hit": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence Hit"
+          },
+          "fact_hit": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fact Hit"
+          },
+          "latency_ms": {
+            "title": "Latency Ms",
+            "type": "integer"
+          },
+          "position": {
+            "title": "Position",
+            "type": "integer"
+          },
+          "prompt_tokens": {
+            "title": "Prompt Tokens",
+            "type": "integer"
+          },
+          "question": {
+            "title": "Question",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "case_id",
+          "position",
+          "question",
+          "status",
+          "answer",
+          "abstained",
+          "fact_hit",
+          "abstention_correct",
+          "evidence_hit",
+          "cited_document_ids",
+          "latency_ms",
+          "prompt_tokens",
+          "completion_tokens"
+        ],
+        "title": "ResultOut",
+        "type": "object"
+      },
       "RetrievalStats": {
         "properties": {
           "authorized": {
@@ -1609,6 +1968,239 @@
           "used"
         ],
         "title": "RetrievalStats",
+        "type": "object"
+      },
+      "RunCreate": {
+        "properties": {
+          "dataset_id": {
+            "format": "uuid",
+            "title": "Dataset Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "dataset_id"
+        ],
+        "title": "RunCreate",
+        "type": "object"
+      },
+      "RunDetail": {
+        "properties": {
+          "case_count": {
+            "title": "Case Count",
+            "type": "integer"
+          },
+          "config": {
+            "additionalProperties": true,
+            "title": "Config",
+            "type": "object"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "created_by": {
+            "format": "uuid",
+            "title": "Created By",
+            "type": "string"
+          },
+          "dataset_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dataset Id"
+          },
+          "dataset_name": {
+            "title": "Dataset Name",
+            "type": "string"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          },
+          "hidden_results": {
+            "title": "Hidden Results",
+            "type": "integer"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "metrics": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Metrics"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/ResultOut"
+            },
+            "title": "Results",
+            "type": "array"
+          },
+          "status": {
+            "enum": [
+              "running",
+              "succeeded",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "dataset_id",
+          "dataset_name",
+          "status",
+          "config",
+          "metrics",
+          "case_count",
+          "error",
+          "created_by",
+          "created_at",
+          "finished_at",
+          "results",
+          "hidden_results"
+        ],
+        "title": "RunDetail",
+        "type": "object"
+      },
+      "RunOut": {
+        "properties": {
+          "case_count": {
+            "title": "Case Count",
+            "type": "integer"
+          },
+          "config": {
+            "additionalProperties": true,
+            "title": "Config",
+            "type": "object"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "created_by": {
+            "format": "uuid",
+            "title": "Created By",
+            "type": "string"
+          },
+          "dataset_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dataset Id"
+          },
+          "dataset_name": {
+            "title": "Dataset Name",
+            "type": "string"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "metrics": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Metrics"
+          },
+          "status": {
+            "enum": [
+              "running",
+              "succeeded",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "dataset_id",
+          "dataset_name",
+          "status",
+          "config",
+          "metrics",
+          "case_count",
+          "error",
+          "created_by",
+          "created_at",
+          "finished_at"
+        ],
+        "title": "RunOut",
         "type": "object"
       },
       "UploadAccepted": {
@@ -3225,6 +3817,530 @@
         "summary": "Download Url",
         "tags": [
           "documents"
+        ]
+      }
+    },
+    "/v1/organizations/{org_id}/evaluation-datasets": {
+      "get": {
+        "operationId": "list_datasets_v1_organizations__org_id__evaluation_datasets_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Org Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/DatasetOut"
+                  },
+                  "title": "Response List Datasets V1 Organizations  Org Id  Evaluation Datasets Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Datasets",
+        "tags": [
+          "evaluations"
+        ]
+      },
+      "post": {
+        "operationId": "create_dataset_v1_organizations__org_id__evaluation_datasets_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Org Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DatasetCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DatasetDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Dataset",
+        "tags": [
+          "evaluations"
+        ]
+      }
+    },
+    "/v1/organizations/{org_id}/evaluation-datasets/{dataset_id}": {
+      "delete": {
+        "description": "Past runs are kept (with the dataset name) for history.",
+        "operationId": "delete_dataset_v1_organizations__org_id__evaluation_datasets__dataset_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "dataset_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Dataset Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Org Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Delete Dataset",
+        "tags": [
+          "evaluations"
+        ]
+      },
+      "get": {
+        "operationId": "get_dataset_v1_organizations__org_id__evaluation_datasets__dataset_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "dataset_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Dataset Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Org Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DatasetDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Dataset",
+        "tags": [
+          "evaluations"
+        ]
+      }
+    },
+    "/v1/organizations/{org_id}/evaluation-datasets/{dataset_id}/cases": {
+      "post": {
+        "operationId": "add_cases_v1_organizations__org_id__evaluation_datasets__dataset_id__cases_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "dataset_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Dataset Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Org Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CasesAdd"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DatasetDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Add Cases",
+        "tags": [
+          "evaluations"
+        ]
+      }
+    },
+    "/v1/organizations/{org_id}/evaluation-datasets/{dataset_id}/cases/{case_id}": {
+      "delete": {
+        "operationId": "delete_case_v1_organizations__org_id__evaluation_datasets__dataset_id__cases__case_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "dataset_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Dataset Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "case_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Case Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Org Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Delete Case",
+        "tags": [
+          "evaluations"
+        ]
+      }
+    },
+    "/v1/organizations/{org_id}/evaluations": {
+      "get": {
+        "operationId": "list_runs_v1_organizations__org_id__evaluations_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Org Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/RunOut"
+                  },
+                  "title": "Response List Runs V1 Organizations  Org Id  Evaluations Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Runs",
+        "tags": [
+          "evaluations"
+        ]
+      },
+      "post": {
+        "description": "Run a dataset now with the full agent, as you (your readable documents).",
+        "operationId": "run_evaluation_v1_organizations__org_id__evaluations_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Org Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RunCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Run Evaluation",
+        "tags": [
+          "evaluations"
+        ]
+      }
+    },
+    "/v1/organizations/{org_id}/evaluations/{run_id}": {
+      "get": {
+        "operationId": "get_run_v1_organizations__org_id__evaluations__run_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Org Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Run",
+        "tags": [
+          "evaluations"
         ]
       }
     },

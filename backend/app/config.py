@@ -97,6 +97,10 @@ class Settings(BaseSettings):
     rate_limit_window_seconds: int = Field(default=60, ge=1)
     rate_limit_chat: int = Field(default=20, ge=1)
     rate_limit_upload: int = Field(default=30, ge=1)
+    rate_limit_evaluation: int = Field(default=3, ge=1)
+
+    # In-product evaluations run synchronously, so runs are capped.
+    evaluation_max_cases: int = Field(default=50, ge=1, le=500)
 
     # Per-tenant quotas by plan (enterprise is unlimited)
     quota_free_documents: int = Field(default=100, ge=0)

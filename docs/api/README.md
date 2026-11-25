@@ -42,6 +42,15 @@ Errors always have the shape
 | GET | `/v1/organizations/{org_id}/conversations/{conversation_id}` | Get Conversation | member |
 | GET | `/v1/organizations/{org_id}/usage` | Your own usage; owners and admins also get organization totals and quotas. | member |
 | GET | `/v1/organizations/{org_id}/audit-logs` | Owners and admins; newest first. Page with `before_id`. | member |
+| POST | `/v1/organizations/{org_id}/evaluation-datasets` | Create Dataset | member |
+| GET | `/v1/organizations/{org_id}/evaluation-datasets` | List Datasets | member |
+| GET | `/v1/organizations/{org_id}/evaluation-datasets/{dataset_id}` | Get Dataset | member |
+| DELETE | `/v1/organizations/{org_id}/evaluation-datasets/{dataset_id}` | Past runs are kept (with the dataset name) for history. | member |
+| POST | `/v1/organizations/{org_id}/evaluation-datasets/{dataset_id}/cases` | Add Cases | member |
+| DELETE | `/v1/organizations/{org_id}/evaluation-datasets/{dataset_id}/cases/{case_id}` | Delete Case | member |
+| POST | `/v1/organizations/{org_id}/evaluations` | Run a dataset now with the full agent, as you (your readable documents). | member |
+| GET | `/v1/organizations/{org_id}/evaluations` | List Runs | member |
+| GET | `/v1/organizations/{org_id}/evaluations/{run_id}` | Get Run | member |
 | GET | `/v1/files/{path}` | Serves local-storage files for signed URLs (dev/test backend only). | none (signed URL) |
 
 `POST /v1/organizations/{org_id}/chat` streams Server-Sent Events when the request has

@@ -22,6 +22,10 @@ TENANT_TABLES = [
     "message_citations",
     "usage_events",
     "audit_logs",
+    "evaluation_datasets",
+    "evaluation_cases",
+    "evaluation_runs",
+    "evaluation_results",
 ]
 DB = "atlas_migration_check"
 
@@ -51,6 +55,11 @@ def test_upgrade_downgrade_upgrade(scratch_db):
     assert not set(TENANT_TABLES) & tables(scratch_db)
     migrate.upgrade(scratch_db)
     assert set(TENANT_TABLES) <= tables(scratch_db)
+
+
+def test_every_public_table_is_checked(test_db):
+    # A new table must be added to TENANT_TABLES (and so get RLS checks).
+    assert tables(test_db["admin"]) - {"alembic_version"} == set(TENANT_TABLES)
 
 
 def test_every_tenant_table_has_rls_and_per_command_policies(test_db):

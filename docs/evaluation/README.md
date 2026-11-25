@@ -32,6 +32,15 @@ Caveats are listed in the report itself. Blueprint targets (Recall@5 ≥ 85%,
 faithfulness ≥ 90%, citation correctness ≥ 95%, p95 simple-query latency < 5 s)
 are **targets**; they have not been measured with a real model yet.
 
+## In-product evaluations
+
+Owners and admins can also benchmark the agent on their **own** documents:
+create a dataset (`POST /v1/organizations/{org}/evaluation-datasets`) with
+questions and expected facts, documents or abstentions, then run it
+(`POST /evaluations`). Runs use the full agent as the requesting user and
+report fact accuracy, abstention accuracy, evidence hit rate, citation
+precision, latency and tokens. Details: [ADR 0012](../decisions/0012-in-product-evaluations.md).
+
 ## Real-model run
 
 ```bash

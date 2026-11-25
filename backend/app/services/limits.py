@@ -106,10 +106,13 @@ async def check_upload(
         raise _exceeded("storage", quota.storage_bytes, usage["storage_bytes"])
 
 
-async def check_question(conn: AsyncConnection, settings: Settings, org_id: UUID) -> None:
+async def check_question(
+    conn: AsyncConnection, settings: Settings, org_id: UUID, count: int = 1
+) -> None:
+    """Fail unless `count` more questions fit in today's quota."""
     quota = plan_quota(settings, await org_plan(conn, org_id))
     if quota.questions_per_day is None:
         return
     usage = await org_usage(conn, org_id, datetime.now(UTC) - timedelta(days=1))
-    if usage["questions"] >= quota.questions_per_day:
+    if usage["questions"] + count > quota.questions_per_day:
         raise _exceeded("questions per day", quota.questions_per_day, usage["questions"])

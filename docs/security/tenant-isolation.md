@@ -64,6 +64,18 @@ restricted document's ACL. Versions, chunks and jobs follow the document.
 | `document_chunks` | document readable | denied (worker only) | denied | denied |
 | `ingestion_jobs` | own job, or document readable | write access on the document | denied | denied |
 
+### Evaluations
+
+| Table | SELECT | INSERT | UPDATE | DELETE |
+|---|---|---|---|---|
+| `evaluation_datasets` | owner/admin | owner/admin, `created_by = self` | owner/admin (`name`, `description`) | owner/admin |
+| `evaluation_cases` | owner/admin | owner/admin | denied | owner/admin |
+| `evaluation_runs` | owner/admin | owner/admin, `created_by = self` | run creator (`status`, `metrics`, `error`, `finished_at`) | denied |
+| `evaluation_results` | owner/admin, and run creator or every source document readable | run creator | denied | denied |
+
+Runs execute as the requesting user, so they only search that user's readable
+documents. Stored answers follow the chat revocation rule in RLS.
+
 The worker role (`atlas_worker`) has its own policies on documents, versions,
 chunks and jobs, all pinned to `app.organization_id`, the tenant of the job
 being processed. It can only delete documents already marked `deleting`, cannot
