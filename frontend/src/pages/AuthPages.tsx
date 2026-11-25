@@ -3,6 +3,7 @@ import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import { Logo } from "../components/Layout";
 import { ErrorBanner } from "../components/ui";
 import { useAuth } from "../hooks/useAuth";
+import { config } from "../services/config";
 import { supabase } from "../services/supabase";
 
 function safeNext(next: string | null): string {
@@ -47,6 +48,11 @@ function AuthForm({ mode }: { mode: "login" | "signup" }) {
         <Logo />
         <h1>{mode === "login" ? "Sign in" : "Create your account"}</h1>
         <p className="muted">Grounded answers from your organization's documents.</p>
+        {!config.configured && (
+          <div className="banner banner-info" role="status">
+            This deployment isn't connected to a backend yet, so sign-in is unavailable.
+          </div>
+        )}
         <ErrorBanner message={error} />
         {notice && <div className="banner banner-info">{notice}</div>}
         <label className="field">
@@ -60,7 +66,7 @@ function AuthForm({ mode }: { mode: "login" | "signup" }) {
             autoComplete={mode === "login" ? "current-password" : "new-password"}
             value={password} onChange={(e) => setPassword(e.target.value)} />
         </label>
-        <button className="btn btn-primary" disabled={busy} type="submit">
+        <button className="btn btn-primary" disabled={busy || !config.configured} type="submit">
           {busy ? "Please wait…" : mode === "login" ? "Sign in" : "Sign up"}
         </button>
         <p className="muted small">

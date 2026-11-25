@@ -8,6 +8,7 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request, status
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from psycopg import errors
 
@@ -64,6 +65,18 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     async def rls_denied(_request: Request, _exc: errors.InsufficientPrivilege) -> JSONResponse:
         # Postgres refused (RLS or grants). Don't echo database messages.
         return JSONResponse({"detail": "not allowed"}, status_code=status.HTTP_403_FORBIDDEN)
+
+    origins = [o.strip() for o in settings.cors_allowed_origins.split(",") if o.strip()]
+    if origins:
+        # Exact origins only (no wildcard): bearer tokens, no cookies.
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=origins,
+            allow_methods=["GET", "POST", "PATCH", "DELETE"],
+            allow_headers=["Authorization", "Content-Type", "Idempotency-Key", "Accept"],
+            allow_credentials=False,
+            max_age=600,
+        )
 
     app.include_router(health_router)
     app.include_router(organizations_router)

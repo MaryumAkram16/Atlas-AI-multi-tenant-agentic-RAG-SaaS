@@ -12,6 +12,9 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore", env_ignore_empty=True)
 
     app_name: str = "atlas-ai"
+    # Browser origins allowed to call the API cross-origin (comma-separated),
+    # e.g. the Vercel frontend. Empty: same-origin only (compose / Vite proxy).
+    cors_allowed_origins: str = ""
     app_env: str = "local"
     log_level: str = "INFO"
 
