@@ -45,6 +45,7 @@ def test_settings(database_url: str, **overrides) -> Settings:
         "embedding_provider": "hash",
         "embedding_dimensions": TEST_DIMENSIONS,
         "tokenizer": "simple",
+        "llm_provider": "extractive",
         "job_backoff_base_seconds": 0,
         "max_upload_bytes": 1024 * 1024,
     }

@@ -92,3 +92,35 @@ def test_upload_is_ingested_by_the_worker_container(http):
         f"/v1/organizations/{ACME_ID}/documents/{doc_id}", headers=bearer(USERS["nina"])
     )
     assert nova.status_code == 404
+
+
+def test_chat_answers_with_citations_end_to_end(http):
+    """Upload, wait for the worker, then ask through the running API."""
+    import time
+    import uuid
+
+    alice = USERS["alice"]
+    code = f"LIVE-{uuid.uuid4().hex[:8].upper()}"
+    content = f"# Live chat\n\n## Window\n\nPolicy {code} allows refunds within 9 days.\n".encode()
+    resp = http.post(
+        f"/v1/organizations/{ACME_ID}/documents",
+        files={"file": ("live-chat.md", content)},
+        headers=bearer(alice),
+    )
+    job_id = resp.json()["job"]["id"]
+    deadline = time.monotonic() + 60
+    while time.monotonic() < deadline:
+        job = http.get(f"/v1/organizations/{ACME_ID}/jobs/{job_id}", headers=bearer(alice)).json()
+        if job["status"] in ("succeeded", "failed"):
+            break
+        time.sleep(1)
+    assert job["status"] == "succeeded"
+    answer = http.post(
+        f"/v1/organizations/{ACME_ID}/chat",
+        json={"question": f"What refund window does {code} allow?"},
+        headers=bearer(alice),
+        timeout=30,
+    ).json()
+    assert answer["status"] == "answered", answer
+    assert "9 days" in answer["answer"]
+    assert answer["citations"][0]["section"].endswith("Window")
