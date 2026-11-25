@@ -1,0 +1,63 @@
+# Local development stack: API, worker placeholder, Postgres (Supabase image) and Qdrant.
+# Usage: cp .env.example .env && docker compose up --build
+
+x-backend: &backend
+  build: ./backend
+  env_file: .env
+  environment:
+    # Inside the compose network, services are reached by name.
+    DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:-postgres}@db:5432/postgres
+    QDRANT_URL: http://qdrant:6333
+  depends_on:
+    db:
+      condition: service_healthy
+    qdrant:
+      condition: service_healthy
+
+services:
+  api:
+    <<: *backend
+    ports:
+      - "${API_PORT:-8000}:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  worker:
+    <<: *backend
+    command: ["python", "-m", "app.workers.main"]
+
+  db:
+    # Supabase's Postgres image: ships the Supabase roles (anon, authenticated,
+    # service_role) and extensions we rely on for RLS in Week 1.
+    image: supabase/postgres:15.8.1.060
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    ports:
+      - "${POSTGRES_PORT:-54322}:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres", "-h", "localhost"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  qdrant:
+    image: qdrant/qdrant:v1.13.6
+    ports:
+      - "${QDRANT_PORT:-6333}:6333"
+    volumes:
+      - qdrant-data:/qdrant/storage
+    healthcheck:
+      # The image has no curl; probe the HTTP port with bash.
+      test: ["CMD-SHELL", "bash -c ':> /dev/tcp/127.0.0.1/6333' || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  db-data:
+  qdrant-data:
