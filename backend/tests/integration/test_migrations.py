@@ -8,7 +8,16 @@ from app.db import migrate
 
 pytestmark = pytest.mark.db
 
-TENANT_TABLES = ["organizations", "organization_members", "organization_invitations"]
+TENANT_TABLES = [
+    "organizations",
+    "organization_members",
+    "organization_invitations",
+    "documents",
+    "document_versions",
+    "document_permissions",
+    "document_chunks",
+    "ingestion_jobs",
+]
 DB = "atlas_migration_check"
 
 
@@ -46,9 +55,12 @@ def test_every_tenant_table_has_rls_and_per_command_policies(test_db):
                 "SELECT relrowsecurity FROM pg_class WHERE oid = %s::regclass", (f"public.{table}",)
             ).fetchone()
             assert rls, f"RLS disabled on {table}"
+            # API requests run as `authenticated`; the worker has its own
+            # tenant-pinned policies, checked in the security tests.
             policies = conn.execute(
                 "SELECT cmd, qual, with_check FROM pg_policies"
-                " WHERE schemaname = 'public' AND tablename = %s",
+                " WHERE schemaname = 'public' AND tablename = %s"
+                " AND roles = '{authenticated}'",
                 (table,),
             ).fetchall()
             cmds = sorted(p[0] for p in policies)

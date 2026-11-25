@@ -55,3 +55,40 @@ def test_tenant_isolation_end_to_end(http):
     assert [o["id"] for o in nova.json()] == [str(NOVA_ID)]
     resp = http.get(f"/v1/organizations/{ACME_ID}/members", headers=bearer(USERS["nina"]))
     assert resp.status_code == 404
+
+
+def test_upload_is_ingested_by_the_worker_container(http):
+    """Upload through the API container; the worker container indexes it."""
+    import time
+    import uuid
+
+    alice = USERS["alice"]
+    content = f"# Live check\n\nPolicy LIVE-{uuid.uuid4()} allows seven days.\n".encode()
+    resp = http.post(
+        f"/v1/organizations/{ACME_ID}/documents",
+        files={"file": ("live.md", content)},
+        headers=bearer(alice),
+    )
+    assert resp.status_code == 202, resp.text
+    doc_id, job_id = resp.json()["document"]["id"], resp.json()["job"]["id"]
+
+    deadline = time.monotonic() + 60
+    while time.monotonic() < deadline:
+        job = http.get(f"/v1/organizations/{ACME_ID}/jobs/{job_id}", headers=bearer(alice)).json()
+        if job["status"] in ("succeeded", "failed"):
+            break
+        time.sleep(1)
+    assert job["status"] == "succeeded", job
+
+    doc = http.get(f"/v1/organizations/{ACME_ID}/documents/{doc_id}", headers=bearer(alice)).json()
+    assert doc["status"] == "ready" and doc["current_version"]["chunk_count"] >= 1
+    version_id = doc["current_version"]["id"]
+    link = http.get(
+        f"/v1/organizations/{ACME_ID}/documents/{doc_id}/versions/{version_id}/download-url",
+        headers=bearer(alice),
+    ).json()["url"]
+    assert httpx.get(link, timeout=5).content == content
+    nova = http.get(
+        f"/v1/organizations/{ACME_ID}/documents/{doc_id}", headers=bearer(USERS["nina"])
+    )
+    assert nova.status_code == 404
