@@ -30,11 +30,15 @@ def cmd_migrate(_args: argparse.Namespace) -> None:
     settings = get_settings()
     url = settings.migration_database_url.get_secret_value()
     migrate.upgrade(url)
-    if settings.atlas_api_db_password is None:
-        print("ATLAS_API_DB_PASSWORD not set; atlas_api login left unchanged")
-    else:
-        migrate.set_api_role_password(url, settings.atlas_api_db_password.get_secret_value())
-        print("atlas_api login enabled")
+    for role, password in [
+        ("atlas_api", settings.atlas_api_db_password),
+        ("atlas_worker", settings.atlas_worker_db_password),
+    ]:
+        if password is None:
+            print(f"no password configured for {role}; login left unchanged")
+        else:
+            migrate.set_role_password(url, role, password.get_secret_value())
+            print(f"{role} login enabled")
 
 
 def cmd_seed(_args: argparse.Namespace) -> None:

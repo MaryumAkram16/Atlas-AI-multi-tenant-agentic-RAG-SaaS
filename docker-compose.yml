@@ -6,12 +6,17 @@ x-backend-env: &backend-env
   # Requests use the restricted atlas_api role, never the schema owner.
   DATABASE_URL: postgresql://atlas_api:${ATLAS_API_DB_PASSWORD}@db:5432/postgres
   MIGRATION_DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:-postgres}@db:5432/postgres
+  # The worker uses its own restricted role, pinned to one tenant per job.
+  WORKER_DATABASE_URL: postgresql://atlas_worker:${ATLAS_WORKER_DB_PASSWORD}@db:5432/postgres
   QDRANT_URL: http://qdrant:6333
+  LOCAL_STORAGE_PATH: /data/storage
 
 x-backend: &backend
   build: ./backend
   env_file: .env
   environment: *backend-env
+  volumes:
+    - storage-data:/data/storage
   depends_on:
     migrate:
       condition: service_completed_successfully
@@ -41,6 +46,7 @@ services:
 
   worker:
     <<: *backend
+    # Ingestion: parse, chunk, embed, index in Qdrant, publish in Postgres.
     command: ["python", "-m", "app.workers.main"]
 
   db:
@@ -60,7 +66,7 @@ services:
       retries: 20
 
   qdrant:
-    image: qdrant/qdrant:v1.13.6
+    image: qdrant/qdrant:v1.20.0
     ports:
       - "${QDRANT_PORT:-6333}:6333"
     volumes:
@@ -75,3 +81,4 @@ services:
 volumes:
   db-data:
   qdrant-data:
+  storage-data:

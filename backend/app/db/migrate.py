@@ -10,7 +10,7 @@ from psycopg import sql
 from app.db.urls import libpq_url
 
 BACKEND_DIR = Path(__file__).resolve().parents[2]
-API_ROLE = "atlas_api"
+LOGIN_ROLES = ("atlas_api", "atlas_worker")
 
 
 def _config(database_url: str) -> Config:
@@ -28,15 +28,17 @@ def downgrade(database_url: str, revision: str) -> None:
     command.downgrade(_config(database_url), revision)
 
 
-def set_api_role_password(database_url: str, password: str) -> None:
-    """Enable LOGIN for atlas_api with the given password.
+def set_role_password(database_url: str, role: str, password: str) -> None:
+    """Enable LOGIN for a restricted role (atlas_api / atlas_worker).
 
     Kept out of migrations so no credential is ever stored in the repo."""
+    if role not in LOGIN_ROLES:
+        raise ValueError(f"unknown login role {role!r}")
     if len(password) < 16:
-        raise ValueError("ATLAS_API_DB_PASSWORD must be at least 16 characters")
+        raise ValueError(f"password for {role} must be at least 16 characters")
     with psycopg.connect(libpq_url(database_url), autocommit=True) as conn:
         conn.execute(
             sql.SQL("ALTER ROLE {} WITH LOGIN PASSWORD {}").format(
-                sql.Identifier(API_ROLE), sql.Literal(password)
+                sql.Identifier(role), sql.Literal(password)
             )
         )

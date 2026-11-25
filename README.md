@@ -4,9 +4,10 @@ Multi-tenant agentic RAG SaaS. Organizations upload documents (PDF, DOCX, TXT,
 MD) and ask questions; answers are grounded with citations, flag version
 conflicts, and abstain when evidence is weak.
 
-> **Status: Week 1, secure multi-tenant foundation.** Organizations,
-> memberships, invitations, roles, Supabase JWT auth and Postgres RLS. No
-> documents, retrieval or agent yet.
+> **Status: Week 2, document ingestion.** Organizations, memberships, roles,
+> Supabase JWT auth and Postgres RLS (Week 1), plus document upload, versions,
+> a Postgres-backed job queue and a worker that parses, chunks and indexes into
+> Qdrant (Week 2). No question answering yet.
 > Features, targets and metrics in the
 > [blueprint](docs/Atlas_AI_RAG_Project_Blueprint.pdf) are planned, not
 > implemented or measured.
@@ -36,7 +37,7 @@ This starts:
 |---------|-----------|-------|
 | `migrate` | (exits) | Runs migrations, enables the `atlas_api` login, then exits |
 | `api` | http://localhost:8000 | FastAPI; docs at `/docs` |
-| `worker` | (no port) | Placeholder; idles until the Week 2 job queue |
+| `worker` | (no port) | Ingestion worker: parse, chunk, embed, index, publish |
 | `db` | localhost:54322 | `supabase/postgres` image, user `postgres` |
 | `qdrant` | http://localhost:6333 | Dashboard at `/dashboard` |
 
@@ -84,6 +85,23 @@ Endpoints so far:
 | PATCH, DELETE | `/v1/organizations/{org_id}/members/{member_id}` | owner/admin: change role, revoke |
 | GET | `/v1/organizations/{org_id}/invitations` | owner/admin |
 | POST | `/v1/invitations/accept` | the invited user (email must match the JWT) |
+| POST, GET | `/v1/organizations/{org_id}/documents` | upload (owner/admin/member; PDF, DOCX, TXT, MD); list visible documents |
+| GET, DELETE | `/v1/organizations/{org_id}/documents/{id}` | read with versions; delete (write access, runs as a job) |
+| POST | `/v1/organizations/{org_id}/documents/{id}/versions` | upload a new version (write access) |
+| POST | `/v1/organizations/{org_id}/documents/{id}/reindex` | reprocess the current version (write access) |
+| GET | `/v1/organizations/{org_id}/documents/{id}/versions/{vid}/download-url` | short-lived signed URL (readers) |
+| GET | `/v1/organizations/{org_id}/jobs/{id}` | ingestion job status |
+
+Upload a document and watch it get indexed:
+
+```bash
+curl -H "Authorization: Bearer $TOKEN" -F file=@sample-data/acme/refund-policy-2026.md \
+  localhost:8000/v1/organizations/0a000000-0000-4000-8000-000000000001/documents
+```
+
+Locally `EMBEDDING_PROVIDER=hash` gives deterministic offline vectors with no
+semantic quality. Set `EMBEDDING_PROVIDER=openai` and `OPENAI_API_KEY` for real
+embeddings (then reindex).
 
 How isolation works and what is tested: [docs/security/tenant-isolation.md](docs/security/tenant-isolation.md).
 
@@ -103,11 +121,11 @@ cd backend && python -m venv .venv && . .venv/bin/activate && pip install -e '.[
 ruff check . && ruff format --check .
 ```
 
-Unit, security and migration tests need Postgres (they create and migrate a
-throwaway `atlas_test` database):
+Security, ingestion and migration tests need Postgres and Qdrant (they create
+and migrate a throwaway `atlas_test` database and a test collection):
 
 ```bash
-docker compose up -d db
+docker compose up -d db qdrant
 ```
 
 ```bash

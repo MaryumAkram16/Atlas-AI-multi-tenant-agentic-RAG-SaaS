@@ -1,4 +1,4 @@
-# Tenant isolation (Week 1)
+# Tenant isolation
 
 How a request is authorized, and what the database enforces on its own. The
 reasoning is in [ADR 0004](../decisions/0004-tenant-isolation-model.md).
@@ -42,6 +42,37 @@ reasoning is in [ADR 0004](../decisions/0004-tenant-isolation-model.md).
 switches to `authenticated`, and it cannot switch to `anon`, `service_role`,
 `postgres` or `supabase_admin`.
 
+## Documents (Week 2)
+
+Document access is decided by `app_private.document_access()` ([ADR 0005](../decisions/0005-ingestion-pipeline.md)):
+
+| Document | owner | admin | member | viewer |
+|---|---|---|---|---|
+| Organization-visible, uploaded by someone else | read, write | read, write | read | read |
+| Organization-visible, uploaded by me | write | write | write | n/a (viewers can't upload) |
+| Restricted, uploaded by someone else, no permission row | none | none | none | none |
+| Restricted, with a `read` / `write` permission row | per row | per row | per row | read |
+
+"Write" covers new versions, reindex and delete. Org role never overrides a
+restricted document's ACL. Versions, chunks and jobs follow the document.
+
+| Table | SELECT | INSERT | UPDATE | DELETE |
+|---|---|---|---|---|
+| `documents` | member, and org-visible or owner or permission | owner/admin/member as `owner_id = self` | write access (`title`, `visibility`) | denied (deletion job) |
+| `document_versions` | document readable | write access, `created_by = self` | denied (worker publishes) | denied |
+| `document_permissions` | own row, or document write access | write access, `granted_by = self` | write access | write access |
+| `document_chunks` | document readable | denied (worker only) | denied | denied |
+| `ingestion_jobs` | own job, or document readable | write access on the document | denied | denied |
+
+The worker role (`atlas_worker`) has its own policies on documents, versions,
+chunks and jobs, all pinned to `app.organization_id`, the tenant of the job
+being processed. It can only delete documents already marked `deleting`, cannot
+read memberships, and cannot switch to `authenticated`.
+
+Files: stored under `<org>/<document>/<version>/` (DB CHECK constraint), served
+only through signed URLs that expire in at most 300 seconds, issued after the
+API checks access. Qdrant payloads contain IDs only.
+
 ## Evidence
 
 | Requirement | Tests |
@@ -54,8 +85,14 @@ switches to `authenticated`, and it cannot switch to `anon`, `service_role`,
 | Migrations run from scratch | `test_upgrade_downgrade_upgrade` |
 | RLS + four policies on every tenant table | `test_every_tenant_table_has_rls_and_per_command_policies` |
 
-API tests: `backend/tests/security/test_api_isolation.py`. Direct DB tests as
-the restricted role: `backend/tests/security/test_rls_direct.py`.
+| Nova cannot see or delete Acme documents | `test_nova_cannot_list_or_read_acme_documents`, `test_nova_cannot_delete_or_modify_acme_documents`, `test_nova_db_session_sees_no_acme_rows` |
+| Restricted documents hidden in every table | `test_restricted_document_hidden_even_from_owner_and_admin`, `test_restricted_document_rows_hidden_in_every_table` |
+| Worker confined to one tenant per job | `test_worker_role_is_pinned_to_the_job_tenant`, `test_worker_cannot_delete_documents_not_marked_for_deletion`, `test_claims_cannot_be_used_by_worker_role` |
+| Signed URLs only after authorization | `test_signed_download_url_only_after_authorization` |
+
+API tests: `backend/tests/security/test_api_isolation.py` and
+`test_document_isolation.py`. Direct DB tests as the restricted roles:
+`test_rls_direct.py` and the DB tests in `test_document_isolation.py`.
 
 ## Known limits
 
@@ -63,3 +100,5 @@ the restricted role: `backend/tests/security/test_rls_direct.py`.
 - Invitation acceptance trusts the JWT `email` claim; require email
   confirmation in Supabase Auth settings.
 - No ownership transfer, org deletion endpoint or audit log yet (Week 6).
+- No endpoints to grant document permissions yet (schema and policies exist).
+- Revocation does not yet revalidate stored conversations or cached evidence (Week 6).

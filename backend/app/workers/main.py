@@ -1,25 +1,38 @@
-"""Ingestion worker placeholder.
-
-The Postgres-backed job queue arrives in Week 2 (see docs/decisions/0002).
-For now the worker idles and shuts down cleanly on SIGTERM/SIGINT.
-"""
+"""Ingestion worker process: `python -m app.workers.main`."""
 
 import logging
+import os
 import signal
+import socket
 import threading
 
 from app.config import get_settings
 from app.observability.logging import configure_logging
+from app.workers.ingestion import IngestionWorker
 
 logger = logging.getLogger("app.worker")
 
 
-def run(stop: threading.Event) -> None:
+def run(stop: threading.Event, worker: IngestionWorker | None = None) -> None:
     settings = get_settings()
-    logger.info("worker started; no job queue yet")
-    while not stop.wait(settings.worker_poll_interval_seconds):
-        logger.debug("worker idle")
-    logger.info("worker stopped")
+    if worker is None:
+        worker = IngestionWorker.from_settings(
+            settings, worker_id=f"{socket.gethostname()}:{os.getpid()}"
+        )
+    try:
+        worker.index.ensure_collection()
+        logger.info("worker started")
+        while not stop.is_set():
+            try:
+                busy = worker.run_once()
+            except Exception:
+                logger.exception("worker loop error")
+                busy = False
+            if not busy:
+                stop.wait(settings.worker_poll_interval_seconds)
+    finally:
+        worker.close()
+        logger.info("worker stopped")
 
 
 def main() -> None:

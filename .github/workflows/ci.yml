@@ -22,14 +22,14 @@ jobs:
           cache: pip
           cache-dependency-path: backend/pyproject.toml
       - run: pip install -e '.[dev]'
-      - name: Start Postgres
+      - name: Start Postgres and Qdrant
         working-directory: .
-        run: cp .env.example .env && docker compose up --detach --wait db
+        run: cp .env.example .env && docker compose up --detach --wait db qdrant
       - name: Lint
         run: ruff check .
       - name: Format check
         run: ruff format --check .
-      - name: Unit, security and migration tests
+      - name: Unit, security, ingestion and migration tests
         run: pytest -m "not integration"
         env:
           ATLAS_REQUIRE_STACK: "1"
