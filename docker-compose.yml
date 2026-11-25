@@ -52,9 +52,9 @@ services:
     command: ["python", "-m", "app.workers.main"]
 
   db:
-    # Supabase's Postgres image: ships the Supabase roles (anon, authenticated,
-    # service_role) and extensions we rely on for RLS in Week 1.
-    image: supabase/postgres:15.8.1.060
+    # Supabase's Postgres 17 image (same major version as hosted Supabase): ships
+    # the Supabase roles (anon, authenticated, service_role) RLS relies on.
+    image: supabase/postgres:17.6.1.121
     environment:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
     ports:
