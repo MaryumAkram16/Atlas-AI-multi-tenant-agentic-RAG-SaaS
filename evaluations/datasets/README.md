@@ -6,7 +6,10 @@
 
 Fields: `id`, `question`, `category`, `relevant` (list of `{document, section}`
 pairs: a retrieved chunk is relevant when it comes from that file and its
-section path ends with that heading), `expected_answer`, `notes`.
+section path ends with that heading), `expected_answer`, `notes`,
+`answer_facts` (strings a correct answer must contain, case-insensitive; a
+string-match proxy for correctness, not a judgment of the whole answer) and
+`stale_documents` (superseded or outdated files that should not be cited).
 
 | Category | Count | What it tests |
 |---|---|---|

@@ -55,7 +55,8 @@ def test_viewer_can_chat(docs_api, corpus):
 
 def test_document_filter_limits_sources(docs_api, corpus):
     leave = corpus["acme/hr-leave-policy-2026.md"]
-    body = ask(docs_api, alice, ACME_ID, "How many days?", document_ids=[leave]).json()
+    question = "How many days of annual leave do employees get?"
+    body = ask(docs_api, alice, ACME_ID, question, document_ids=[leave]).json()
     assert body["citations"] and {c["document_id"] for c in body["citations"]} == {leave}
 
 
