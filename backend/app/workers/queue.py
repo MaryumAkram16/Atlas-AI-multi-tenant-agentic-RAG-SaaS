@@ -21,6 +21,7 @@ class Job:
     max_attempts: int
     created_by: UUID
     run_after: datetime
+    trace_context: dict | None = None
 
 
 def backoff_seconds(attempt: int, *, base: float, cap: float) -> float:
@@ -45,7 +46,7 @@ def sanitize_error(exc: BaseException) -> str:
 def claim(conn: psycopg.Connection, worker_id: str, lease_seconds: int) -> Job | None:
     row = conn.execute(
         "SELECT id, organization_id, document_id, document_version_id, kind, attempts,"
-        " max_attempts, created_by, run_after"
+        " max_attempts, created_by, run_after, trace_context"
         " FROM app_private.claim_ingestion_job(%s, %s)",
         (worker_id, lease_seconds),
     ).fetchone()

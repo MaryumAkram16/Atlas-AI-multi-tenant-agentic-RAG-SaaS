@@ -49,8 +49,7 @@ export function KnowledgeBasePage() {
       if (done) setNotice(done);
       await load();
     } catch (e) {
-      const detail = e instanceof ApiError ? e.detail : null;
-      if (detail && typeof detail === "object" && "existing_document_id" in detail) {
+      if (e instanceof ApiError && e.code === "duplicate_document") {
         setError("This exact file is already in the knowledge base.");
       } else {
         setError((e as Error).message);

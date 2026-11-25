@@ -1,10 +1,13 @@
 """Document data access, always inside a UserDB transaction (RLS applies)."""
 
+import json
 from datetime import date
 from typing import Any
 from uuid import UUID
 
 from psycopg import AsyncConnection
+
+from app.observability.tracing import inject_context
 
 Row = dict[str, Any]
 
@@ -230,13 +233,23 @@ async def insert_job(
         """
         INSERT INTO ingestion_jobs
             (organization_id, document_id, document_version_id, kind, idempotency_key,
-             max_attempts, created_by)
-        VALUES (%s, %s, %s, %s, %s, %s, %s)
+             max_attempts, created_by, trace_context)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
         RETURNING id, organization_id, document_id, document_version_id, kind, status,
                   attempts, max_attempts, run_after, last_error, created_at, updated_at,
                   finished_at
         """,
-        (org_id, document_id, version_id, kind, idempotency_key, max_attempts, created_by),
+        (
+            org_id,
+            document_id,
+            version_id,
+            kind,
+            idempotency_key,
+            max_attempts,
+            created_by,
+            # W3C trace context: the worker continues this request's trace.
+            json.dumps(inject_context()),
+        ),
     )
 
 

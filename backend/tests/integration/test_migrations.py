@@ -17,6 +17,11 @@ TENANT_TABLES = [
     "document_permissions",
     "document_chunks",
     "ingestion_jobs",
+    "conversations",
+    "messages",
+    "message_citations",
+    "usage_events",
+    "audit_logs",
 ]
 DB = "atlas_migration_check"
 

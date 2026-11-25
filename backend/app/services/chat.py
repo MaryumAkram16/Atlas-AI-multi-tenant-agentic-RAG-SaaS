@@ -28,6 +28,7 @@ from app.db.session import UserDB
 from app.repositories import chat as repo
 from app.retrieval.authorize import SearchScope, allowed_documents
 from app.retrieval.hybrid import HybridRetriever
+from app.services import limits
 from app.services.answering import Evidence, parse_citations
 from app.services.llm import ChatLLM, Usage
 
@@ -59,8 +60,13 @@ async def prepare(
     question: str,
     conversation_id: UUID | None,
     document_ids: list[UUID] | None,
+    settings: Settings,
 ) -> PreparedChat:
     async with db.transaction() as conn:
+        await limits.rate_limit(
+            conn, ctx.org_id, "chat", settings.rate_limit_chat, settings.rate_limit_window_seconds
+        )
+        await limits.check_question(conn, settings, ctx.org_id)
         if conversation_id is not None:
             if await repo.get_conversation(conn, ctx.org_id, conversation_id) is None:
                 raise ConversationNotFound()
@@ -136,6 +142,8 @@ async def run(
             await repo.create_conversation(
                 conn, prepared.conversation_id, org, user_id, prepared.question[:200]
             )
+        # Earlier answers are reused as context only if their sources are
+        # still readable (revocation revalidation of "cached evidence").
         history = await repo.recent_messages(
             conn, prepared.conversation_id, settings.chat_history_messages
         )
@@ -235,20 +243,24 @@ async def run(
                 "model": llm.name,
                 "trace": state.get("trace", []),
                 "verification": state.get("verification"),
+                # Every document the answer was generated from: if any becomes
+                # unreadable, the stored answer is hidden (revocation).
+                "source_document_ids": sorted({str(e.document_id) for e in answer_evidence}),
             },
         )
         await repo.insert_citations(conn, org, prepared.message_id, citations)
-        if usage is not None:
-            await repo.insert_usage(
-                conn,
-                org_id=org,
-                user_id=user_id,
-                message_id=prepared.message_id,
-                model=usage.model,
-                prompt_tokens=usage.prompt_tokens,
-                completion_tokens=usage.completion_tokens,
-                estimated_cost=_cost(settings, usage),
-            )
+        # One usage event per question, even when no model was called
+        # (greetings, abstentions): the daily question quota counts these.
+        await repo.insert_usage(
+            conn,
+            org_id=org,
+            user_id=user_id,
+            message_id=prepared.message_id,
+            model=usage.model if usage else llm.name,
+            prompt_tokens=usage.prompt_tokens if usage else 0,
+            completion_tokens=usage.completion_tokens if usage else 0,
+            estimated_cost=_cost(settings, usage),
+        )
         await repo.touch_conversation(conn, prepared.conversation_id)
 
     logger.info(

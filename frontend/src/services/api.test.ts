@@ -9,5 +9,9 @@ describe("messageFor", () => {
     expect(messageFor(401, null)).toMatch(/sign in again/);
     expect(messageFor(403, null)).toMatch(/permission/);
     expect(messageFor(422, [{ loc: ["body"] }])).toMatch(/check the form/);
+    expect(messageFor(422, { code: "validation_error", message: "Request validation failed." }))
+      .toMatch(/check the form/);
+    expect(messageFor(429, { code: "quota_exceeded", message: "Your plan's documents limit has been reached." }))
+      .toMatch(/documents limit/);
   });
 });

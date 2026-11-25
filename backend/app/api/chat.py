@@ -29,7 +29,12 @@ router = APIRouter(prefix="/v1/organizations/{org_id}", tags=["chat"])
 async def chat(body: ChatRequest, request: Request, ctx: Org, db: DB):
     try:
         prepared = await service.prepare(
-            db, ctx, body.question, body.conversation_id, body.document_ids
+            db,
+            ctx,
+            body.question,
+            body.conversation_id,
+            body.document_ids,
+            request.app.state.settings,
         )
     except service.ConversationNotFound:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="conversation not found") from None
@@ -98,7 +103,9 @@ async def get_conversation(conversation_id: UUID, ctx: Org, db: DB) -> Conversat
         conv = await repo.get_conversation(conn, ctx.org_id, conversation_id)
         if conv is None:
             raise HTTPException(status.HTTP_404_NOT_FOUND, detail="conversation not found")
-        messages = await repo.conversation_messages(conn, conversation_id)
+        messages = await repo.redact_unreadable(
+            conn, await repo.conversation_messages(conn, conversation_id)
+        )
         citations = await repo.citations_for(conn, [m["id"] for m in messages])
     by_message: dict[UUID, list[Citation]] = defaultdict(list)
     for c in citations:
@@ -106,11 +113,12 @@ async def get_conversation(conversation_id: UUID, ctx: Org, db: DB) -> Conversat
 
     def message(m: dict) -> MessageOut:
         meta = m.pop("metadata") or {}
+        redacted = m.pop("redacted", False)
         return MessageOut(
             **m,
-            citations=by_message.get(m["id"], []),
+            citations=[] if redacted else by_message.get(m["id"], []),
             evidence_status=meta.get("evidence_status"),
-            conflicts=meta.get("conflicts", []),
+            conflicts=[] if redacted else meta.get("conflicts", []),
             retrieval_attempts=meta.get("retrieval_attempts"),
             trace_id=meta.get("trace_id"),
         )

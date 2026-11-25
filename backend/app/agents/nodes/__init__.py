@@ -16,6 +16,7 @@ from app.agents.tools.conflicts import detect_conflicts, excluded_documents, par
 from app.agents.tools.reasoner import classify, coverage
 from app.agents.tools.text import policy_ids, salient_terms
 from app.agents.tools.verify import verify
+from app.observability.tracing import span
 from app.retrieval.fusion import rrf_fuse
 from app.services.answering import (
     INSUFFICIENT_EVIDENCE_ANSWER,
@@ -58,7 +59,11 @@ def node(name: str, *, guarded: bool = True):
                     return {"steps": steps, "halt": "timeout"}
             await deps.emit("step", {"node": name})
             started = time.perf_counter()
-            update = await fn(state, deps) or {}
+            with span(f"agent.{name}", node=name, step=steps) as s:
+                update = await fn(state, deps) or {}
+                for key in ("intent", "evidence_status", "status", "attempts"):
+                    if key in update:
+                        s.set_attribute(f"agent.{key}", update[key])
             elapsed = round((time.perf_counter() - started) * 1000, 1)
             update["steps"] = steps
             update["trace"] = [*state.get("trace", []), {"node": name, "ms": elapsed}]
@@ -273,11 +278,14 @@ async def generate_answer(state: AgentState, deps: AgentDeps) -> dict:
         feedback=state.get("feedback"),
     )
     parts, usage = [], list(state.get("usage", []))
-    async for event in deps.llm.stream(messages):
-        if isinstance(event, TextDelta):
-            parts.append(event.text)
-        elif isinstance(event, Usage):
-            usage.append(event)
+    with span("llm.generate", model=deps.llm.name, sources=len(state["answer_evidence"])) as s:
+        async for event in deps.llm.stream(messages):
+            if isinstance(event, TextDelta):
+                parts.append(event.text)
+            elif isinstance(event, Usage):
+                usage.append(event)
+                s.set_attribute("llm.prompt_tokens", event.prompt_tokens)
+                s.set_attribute("llm.completion_tokens", event.completion_tokens)
     return {"answer": "".join(parts).strip(), "usage": usage, "needs_correction": False}
 
 

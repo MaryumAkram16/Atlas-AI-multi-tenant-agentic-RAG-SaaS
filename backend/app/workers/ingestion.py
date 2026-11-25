@@ -25,6 +25,7 @@ from app.documents.validation import validate_upload
 from app.ingestion.chunking import Chunk, chunk_blocks
 from app.ingestion.parsing import parse_document
 from app.ingestion.tokenizer import Tokenizer, get_tokenizer
+from app.observability.tracing import extract_context, span, tracer
 from app.retrieval.embeddings import Embedder, build_embedder
 from app.retrieval.index import IndexPoint, VectorIndex
 from app.retrieval.sparse import bm25_document_vector
@@ -110,20 +111,34 @@ class IngestionWorker:
         if job is None:
             return False
         log = {"job_id": str(job.id), "kind": job.kind, "org_id": str(job.organization_id)}
-        logger.info("job claimed attempt=%s %s", job.attempts, log)
-        try:
-            if job.attempts > job.max_attempts:
-                raise PermanentJobError("attempts exhausted after lease expiry")
-            if job.kind == "delete":
-                self._delete(job)
-            else:
-                self._ingest(job)
-            logger.info("job succeeded %s", log)
-        except Exception as exc:
-            self._handle_failure(job, exc)
-            logger.warning(
-                "job failed attempt=%s error=%s %s", job.attempts, type(exc).__name__, log
-            )
+        # Continue the trace of the API request that queued the job.
+        with tracer("atlas.worker").start_as_current_span(
+            f"worker.job {job.kind}",
+            context=extract_context(job.trace_context),
+            attributes={
+                "job.id": str(job.id),
+                "job.kind": job.kind,
+                "job.attempt": job.attempts,
+                "org.id": str(job.organization_id),
+            },
+        ) as job_span:
+            logger.info("job claimed attempt=%s %s", job.attempts, log)
+            try:
+                if job.attempts > job.max_attempts:
+                    raise PermanentJobError("attempts exhausted after lease expiry")
+                if job.kind == "delete":
+                    self._delete(job)
+                else:
+                    self._ingest(job)
+                job_span.set_attribute("job.outcome", "succeeded")
+                logger.info("job succeeded %s", log)
+            except Exception as exc:
+                job_span.set_attribute("job.outcome", "failed")
+                job_span.set_attribute("error.type", type(exc).__name__)
+                self._handle_failure(job, exc)
+                logger.warning(
+                    "job failed attempt=%s error=%s %s", job.attempts, type(exc).__name__, log
+                )
         return True
 
     # ------------------------------------------------------------------ ingest
@@ -154,15 +169,20 @@ class IngestionWorker:
                 )
             }
 
-        data = self.storage.get(version["storage_path"])
-        kind = validate_upload(version["filename"], data, max_bytes=len(data))
-        parsed = parse_document(data, kind.parser)
-        chunks = chunk_blocks(
-            parsed.blocks,
-            self.tokenizer,
-            max_tokens=self.chunk_tokens,
-            overlap=self.chunk_overlap,
-        )
+        with span("ingest.parse") as s:
+            data = self.storage.get(version["storage_path"])
+            kind = validate_upload(version["filename"], data, max_bytes=len(data))
+            parsed = parse_document(data, kind.parser)
+            s.set_attribute("parser", kind.parser)
+            s.set_attribute("blocks", len(parsed.blocks))
+        with span("ingest.chunk") as s:
+            chunks = chunk_blocks(
+                parsed.blocks,
+                self.tokenizer,
+                max_tokens=self.chunk_tokens,
+                overlap=self.chunk_overlap,
+            )
+            s.set_attribute("chunks", len(chunks))
         if not chunks:
             raise PermanentJobError("no extractable text")
 
@@ -194,23 +214,25 @@ class IngestionWorker:
                 )
 
         texts = [embedding_input(c) for c in chunks]
-        dense = self.embedder.embed(texts)
+        with span("ingest.embed", chunks=len(texts)):
+            dense = self.embedder.embed(texts)
         if len(dense) != len(chunks):
             raise RuntimeError("embedding count mismatch")
-        self.index.upsert(
-            [
-                IndexPoint(
-                    id=cid,
-                    dense=vec,
-                    sparse=bm25_document_vector(text),
-                    organization_id=org,
-                    document_id=version["document_id"],
-                    version_id=version["id"],
-                    chunk_index=c.index,
-                )
-                for cid, c, vec, text in zip(ids, chunks, dense, texts, strict=True)
-            ]
-        )
+        with span("ingest.index", points=len(chunks)):
+            self.index.upsert(
+                [
+                    IndexPoint(
+                        id=cid,
+                        dense=vec,
+                        sparse=bm25_document_vector(text),
+                        organization_id=org,
+                        document_id=version["document_id"],
+                        version_id=version["id"],
+                        chunk_index=c.index,
+                    )
+                    for cid, c, vec, text in zip(ids, chunks, dense, texts, strict=True)
+                ]
+            )
         stale = previous_ids - set(ids)
         if stale:
             self.index.delete_points(list(stale))
@@ -219,7 +241,8 @@ class IngestionWorker:
         if indexed != len(chunks):
             raise RuntimeError(f"index validation failed: {indexed} of {len(chunks)} points")
 
-        self._publish(job, version, len(chunks), parsed.effective_date)
+        with span("ingest.publish"):
+            self._publish(job, version, len(chunks), parsed.effective_date)
 
     def _publish(self, job: Job, version: dict, chunk_count: int, detected: date | None) -> None:
         org = job.organization_id

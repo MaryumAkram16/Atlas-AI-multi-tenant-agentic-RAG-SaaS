@@ -17,6 +17,9 @@ class Settings(BaseSettings):
     cors_allowed_origins: str = ""
     app_env: str = "local"
     log_level: str = "INFO"
+    log_format: Literal["json", "text"] = "json"
+    # OpenTelemetry collector (OTLP/HTTP), e.g. http://otel-collector:4318. Unset: no export.
+    otel_exporter_otlp_endpoint: str | None = None
 
     # Restricted login role used for every request (atlas_api). Never the
     # service role or the migration owner. SecretStr keeps passwords out of logs.
@@ -84,6 +87,19 @@ class Settings(BaseSettings):
     agent_timeout_seconds: float = Field(default=45, gt=0)
     agent_max_evidence_tokens: int = Field(default=6000, ge=500)
     agent_sufficient_coverage: float = Field(default=0.6, gt=0, le=1)
+
+    # Rate limits (per user, per organization, fixed window)
+    rate_limit_window_seconds: int = Field(default=60, ge=1)
+    rate_limit_chat: int = Field(default=20, ge=1)
+    rate_limit_upload: int = Field(default=30, ge=1)
+
+    # Per-tenant quotas by plan (enterprise is unlimited)
+    quota_free_documents: int = Field(default=100, ge=0)
+    quota_free_storage_mb: int = Field(default=200, ge=0)
+    quota_free_questions_per_day: int = Field(default=300, ge=0)
+    quota_pro_documents: int = Field(default=5000, ge=0)
+    quota_pro_storage_mb: int = Field(default=20_000, ge=0)
+    quota_pro_questions_per_day: int = Field(default=10_000, ge=0)
 
     # Job queue
     job_max_attempts: int = Field(default=5, ge=1, le=20)

@@ -36,7 +36,11 @@ def run(stop: threading.Event, worker: IngestionWorker | None = None) -> None:
 
 
 def main() -> None:
-    configure_logging(get_settings().log_level)
+    settings = get_settings()
+    configure_logging(settings.log_level, json_logs=settings.log_format == "json")
+    from app.observability.tracing import setup_tracing
+
+    setup_tracing("atlas-worker", settings.otel_exporter_otlp_endpoint)
     stop = threading.Event()
     for sig in (signal.SIGTERM, signal.SIGINT):
         signal.signal(sig, lambda *_: stop.set())

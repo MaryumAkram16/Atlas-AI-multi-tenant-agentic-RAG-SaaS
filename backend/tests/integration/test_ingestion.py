@@ -107,7 +107,8 @@ def test_duplicate_upload_is_detected(docs_api, worker):
     first = upload(docs_api, alice, ACME_ID, "refund-2024.md", data).json()["document"]["id"]
     dup = upload(docs_api, alice, ACME_ID, "copy.md", data)
     assert dup.status_code == 409
-    assert dup.json()["detail"]["existing_document_id"] == first
+    assert dup.json()["error"]["code"] == "duplicate_document"
+    assert dup.json()["error"]["existing_document_id"] == first
     # Same bytes as a new version of the same document is also a duplicate.
     again = upload_version(docs_api, alice, ACME_ID, first, "refund-2024.md", data)
     assert again.status_code == 409

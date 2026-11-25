@@ -1,20 +1,34 @@
 import { config } from "./config";
 
+/** Server errors: {"error": {"code", "message", "request_id", ...}}. */
+export interface ErrorBody {
+  code?: string;
+  message?: string;
+  request_id?: string;
+  [extra: string]: unknown;
+}
+
 export class ApiError extends Error {
   constructor(
     public status: number,
-    public detail: unknown,
+    public detail: ErrorBody | null,
   ) {
     super(messageFor(status, detail));
+  }
+  get code(): string | undefined {
+    return this.detail?.code;
   }
 }
 
 export function messageFor(status: number, detail: unknown): string {
   if (typeof detail === "string") return detail;
   if (detail && typeof detail === "object" && "message" in detail) {
-    return String((detail as { message: unknown }).message);
+    const message = String((detail as { message: unknown }).message);
+    const code = (detail as { code?: unknown }).code;
+    if (message && code !== "validation_error") return message;
   }
   if (Array.isArray(detail)) return "Please check the form and try again.";
+  if (status === 422) return "Please check the form and try again.";
   if (status === 401) return "Your session has expired. Please sign in again.";
   if (status === 403) return "You don't have permission to do that.";
   if (status === 404) return "Not found.";
@@ -41,6 +55,6 @@ export async function apiRequest<T>(
   const resp = await fetch(`${config.apiUrl}${path}`, { method: init.method || "GET", headers, body });
   if (resp.status === 204) return undefined as T;
   const data = resp.headers.get("content-type")?.includes("json") ? await resp.json() : null;
-  if (!resp.ok) throw new ApiError(resp.status, data?.detail);
+  if (!resp.ok) throw new ApiError(resp.status, data?.error ?? null);
   return data as T;
 }

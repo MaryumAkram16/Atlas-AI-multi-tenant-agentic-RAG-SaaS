@@ -59,20 +59,59 @@ async def touch_conversation(conn: AsyncConnection, conv_id: UUID) -> None:
     await conn.execute("UPDATE conversations SET title = title WHERE id = %s", (conv_id,))
 
 
+REDACTED_ANSWER = (
+    "This answer used a source you no longer have access to, so it is no longer shown."
+)
+
+
+async def unreadable_documents(conn: AsyncConnection, document_ids: set[UUID]) -> set[UUID]:
+    """Documents the caller can no longer read (deleted, restricted, revoked)."""
+    if not document_ids:
+        return set()
+    rows = await _all(
+        conn,
+        """
+        SELECT d AS id FROM unnest(%s::uuid[]) AS d
+        WHERE app_private.document_access(d) IS NULL
+        """,
+        (list(document_ids),),
+    )
+    return {r["id"] for r in rows}
+
+
+async def redact_unreadable(conn: AsyncConnection, messages: list[Row]) -> list[Row]:
+    """Hide assistant messages generated from documents the caller can no
+    longer read. Messages must include `metadata`."""
+    sources = {
+        UUID(d) for m in messages for d in (m.get("metadata") or {}).get("source_document_ids", [])
+    }
+    lost = await unreadable_documents(conn, sources)
+    if not lost:
+        return messages
+    out = []
+    for m in messages:
+        used = {UUID(d) for d in (m.get("metadata") or {}).get("source_document_ids", [])}
+        if m["role"] == "assistant" and used & lost:
+            m = {**m, "content": REDACTED_ANSWER, "redacted": True}
+        out.append(m)
+    return out
+
+
 async def recent_messages(conn: AsyncConnection, conv_id: UUID, limit: int) -> list[Row]:
     if limit <= 0:
         return []
     rows = await _all(
         conn,
         """
-        SELECT role, content FROM messages
+        SELECT role, content, metadata FROM messages
         WHERE conversation_id = %s
         ORDER BY created_at DESC, id DESC
         LIMIT %s
         """,
         (conv_id, limit),
     )
-    return list(reversed(rows))
+    rows = await redact_unreadable(conn, list(reversed(rows)))
+    return [{"role": r["role"], "content": r["content"]} for r in rows]
 
 
 async def insert_message(

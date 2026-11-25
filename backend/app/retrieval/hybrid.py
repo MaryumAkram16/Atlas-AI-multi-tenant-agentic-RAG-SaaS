@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from typing import Literal
 from uuid import UUID
 
+from app.observability.tracing import span
 from app.retrieval.embeddings import Embedder
 from app.retrieval.fusion import rrf_fuse
 from app.retrieval.index import VectorIndex
@@ -51,6 +52,12 @@ class HybridRetriever:
     ) -> list[Candidate]:
         if not document_ids:
             return []
+        with span("retrieval.hybrid", mode=mode, documents=len(document_ids)) as s:
+            results = self._retrieve(query, organization_id, document_ids, version_ids, mode)
+            s.set_attribute("candidates", len(results))
+            return results
+
+    def _retrieve(self, query, organization_id, document_ids, version_ids, mode):
         scope = {
             "organization_id": organization_id,
             "document_ids": document_ids,

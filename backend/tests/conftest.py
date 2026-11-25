@@ -48,6 +48,9 @@ def test_settings(database_url: str, **overrides) -> Settings:
         "llm_provider": "extractive",
         "job_backoff_base_seconds": 0,
         "max_upload_bytes": 1024 * 1024,
+        # Limits are exercised by dedicated tests; keep them out of the way elsewhere.
+        "rate_limit_chat": 10_000,
+        "rate_limit_upload": 10_000,
     }
     values.update(overrides)
     return Settings(**values)
@@ -110,6 +113,7 @@ def seeded(test_db):
 
     with psycopg.connect(test_db["admin"]) as conn:
         conn.execute("TRUNCATE public.organizations CASCADE")
+        conn.execute("TRUNCATE public.audit_logs, app_private.rate_limit_counters")
         seed.seed(conn)
     return test_db
 

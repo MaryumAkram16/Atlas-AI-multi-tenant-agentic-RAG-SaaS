@@ -48,7 +48,7 @@ export async function* postSSE(
   });
   if (!resp.ok || !resp.body) {
     const data = resp.headers.get("content-type")?.includes("json") ? await resp.json() : null;
-    throw new ApiError(resp.status, data?.detail);
+    throw new ApiError(resp.status, data?.error ?? null);
   }
   const reader = resp.body.getReader();
   const decoder = new TextDecoder();

@@ -15,5 +15,9 @@ and policies are fictional.
 | `acme/it-security-policy.md` | Acme | IT-SEC-05 passwords, MFA, incidents |
 | `acme/customer-service-handbook-2023.md` | Acme | Outdated 2023 handbook (30-day refunds) |
 
+| `acme/benefits-policy.md`, `code-of-conduct.md`, `data-retention-policy.md`, `procurement-policy.md`, `holiday-calendar-2026.md`, `onboarding-guide.md`, `warranty-policy.md` | Acme | More HR, IT and finance policies for the eval set |
+| `acme/shipping-policy-2025.md` / `shipping-policy-2026.md` | Acme | Version conflict: 5 vs 3 business days, 50 vs 75 USD free shipping |
+| `acme/vendor-faq.md` | Acme | Contains a prompt-injection payload (for injection-resistance evals) |
+
 The evaluation dataset that uses these files is in
 `evaluations/datasets/hr_refund_v1.jsonl`.

@@ -40,6 +40,7 @@ from app.schemas.documents import (
     VersionOut,
     Visibility,
 )
+from app.services import limits
 
 router = APIRouter(prefix="/v1/organizations/{org_id}", tags=["documents"])
 files_router = APIRouter(tags=["files"])
@@ -123,19 +124,33 @@ async def upload_document(
     filename = safe_filename(file.filename or "upload")
     job_key = f"upload:{idempotency_key}" if idempotency_key else None
 
+    settings = request.app.state.settings
     async with db.transaction() as conn:
         if job_key and (existing := await repo.job_by_key(conn, ctx.org_id, job_key)):
             response.status_code = status.HTTP_200_OK
             return await _accepted(conn, ctx.org_id, existing)
+        await limits.rate_limit(
+            conn,
+            ctx.org_id,
+            "upload",
+            settings.rate_limit_upload,
+            settings.rate_limit_window_seconds,
+        )
+        await limits.check_upload(
+            conn, settings, ctx.org_id, new_document=True, size_bytes=len(data)
+        )
         if dup := await repo.find_duplicate(conn, ctx.org_id, checksum):
             raise HTTPException(
                 status.HTTP_409_CONFLICT,
-                detail={"message": "duplicate document", "existing_document_id": str(dup)},
+                detail={
+                    "code": "duplicate_document",
+                    "message": "This exact file is already in the knowledge base.",
+                    "existing_document_id": str(dup),
+                },
             )
 
     doc_id, version_id = uuid.uuid4(), uuid.uuid4()
     path = object_path(ctx.org_id, doc_id, version_id, filename)
-    settings = request.app.state.settings
 
     async def record() -> UploadAccepted:
         async with db.transaction() as conn:
@@ -234,17 +249,31 @@ async def upload_version(
         raise HTTPException(status.HTTP_409_CONFLICT, detail="document is being deleted")
     data, mime = await _read_upload(request, file)
     checksum = hashlib.sha256(data).hexdigest()
+    settings = request.app.state.settings
     async with db.transaction() as conn:
+        await limits.rate_limit(
+            conn,
+            ctx.org_id,
+            "upload",
+            settings.rate_limit_upload,
+            settings.rate_limit_window_seconds,
+        )
+        await limits.check_upload(
+            conn, settings, ctx.org_id, new_document=False, size_bytes=len(data)
+        )
         if dup := await repo.find_duplicate(conn, ctx.org_id, checksum):
             raise HTTPException(
                 status.HTTP_409_CONFLICT,
-                detail={"message": "duplicate document", "existing_document_id": str(dup)},
+                detail={
+                    "code": "duplicate_document",
+                    "message": "This exact file is already in the knowledge base.",
+                    "existing_document_id": str(dup),
+                },
             )
 
     filename = safe_filename(file.filename or "upload")
     version_id = uuid.uuid4()
     path = object_path(ctx.org_id, document_id, version_id, filename)
-    settings = request.app.state.settings
 
     async def record() -> UploadAccepted:
         async with db.transaction() as conn:
