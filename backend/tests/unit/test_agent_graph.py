@@ -294,3 +294,42 @@ async def test_synonyms_count_toward_evidence_coverage(corpus):
     state, _ = await ask(deps, "Which policy did REF-2026-07 replace?")
     assert state["evidence_status"] == "sufficient"
     assert "REF-2024-01" in state["answer"]
+
+
+async def ask_with_history(deps, question, history):
+    state, _ = await run_agent(question, history, deps)
+    return state
+
+
+@pytest.mark.asyncio
+async def test_follow_up_question_uses_the_conversation(corpus):
+    deps, _ = make_deps(corpus)
+    history = [
+        {"role": "user", "content": "How many unused leave days can be carried over?"},
+        {"role": "assistant", "content": "Up to 10 unused annual leave days [1]."},
+    ]
+    state = await ask_with_history(deps, "And when do they expire?", history)
+    assert state["standalone_question"].startswith("How many unused leave days")
+    assert state["status"] == "answered"
+    assert "June 30" in state["answer"]
+    alone = await ask_with_history(deps, "And when do they expire?", [])
+    assert alone.get("standalone_question") is None  # nothing to contextualize with
+
+
+@pytest.mark.asyncio
+async def test_what_about_follow_up(corpus):
+    deps, _ = make_deps(corpus)
+    history = [{"role": "user", "content": "How long is the standard hardware warranty?"}]
+    state = await ask_with_history(deps, "What about premium customers?", history)
+    assert state["status"] == "answered" and "24-month" in state["answer"]
+
+
+@pytest.mark.asyncio
+async def test_new_topic_in_a_conversation_is_not_dragged_back(corpus):
+    deps, _ = make_deps(corpus)
+    history = [{"role": "user", "content": "How long is the standard hardware warranty?"}]
+    state = await ask_with_history(
+        deps, "How much are meal expenses reimbursed during business travel?", history
+    )
+    assert state.get("standalone_question") is None
+    assert "60 USD" in state["answer"]

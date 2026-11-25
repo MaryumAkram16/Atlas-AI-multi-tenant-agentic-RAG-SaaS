@@ -90,3 +90,35 @@ async def test_llm_reasoner_cannot_mark_off_topic_evidence_sufficient():
     a = await r.assess("What is the stock option vesting schedule?", off_topic)
     assert a.status == "weak"  # heuristic floor; the model was not asked
     assert r.usage == []
+
+
+@pytest.mark.parametrize(
+    "question,follow_up",
+    [
+        ("And when do they expire?", True),
+        ("What about premium customers?", True),
+        ("Does it apply to contractors?", True),
+        ("How many days of parental leave do employees get?", False),
+        ("What is the minimum password length?", False),
+        ("What is the password policy?", False),
+    ],
+)
+def test_follow_up_detection(question, follow_up):
+    from app.agents.tools.reasoner import looks_like_follow_up
+
+    assert looks_like_follow_up(question) is follow_up
+
+
+@pytest.mark.asyncio
+async def test_llm_contextualize_falls_back_to_heuristic():
+    history = [{"role": "user", "content": "How long is the warranty?"}]
+    good = LLMReasoner(ScriptedLLM(['{"question": "How long is the premium warranty?"}']))
+    assert (
+        await good.contextualize("What about premium?", history)
+        == "How long is the premium warranty?"
+    )
+    bad = LLMReasoner(ScriptedLLM(["nope"]))
+    assert await bad.contextualize("What about premium?", history) == (
+        "How long is the warranty? What about premium?"
+    )
+    assert await good.contextualize("What is the password policy?", history) is None

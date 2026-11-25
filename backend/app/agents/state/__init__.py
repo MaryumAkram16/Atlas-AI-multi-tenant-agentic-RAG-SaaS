@@ -49,6 +49,7 @@ class AgentState(TypedDict, total=False):
     intent: str
     plan: dict[str, Any]
     search_queries: list[str]
+    standalone_question: str | None
     attempts: int
     candidates: list[tuple[UUID, float]]
     authorized_count: int

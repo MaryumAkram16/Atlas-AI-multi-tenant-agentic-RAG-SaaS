@@ -134,9 +134,18 @@ async def plan_retrieval(state: AgentState, deps: AgentDeps) -> dict:
 @node("decompose_query")
 async def decompose_query(state: AgentState, deps: AgentDeps) -> dict:
     question = state["question"]
-    subs = await deps.reasoner.decompose(question)
-    queries = list(dict.fromkeys([question, *subs, *state["plan"]["exact_ids"]]))
-    return {"search_queries": queries}
+    # Follow-ups ("and when do they expire?") are searched as standalone questions.
+    standalone = await deps.reasoner.contextualize(question, state.get("history", []))
+    base = standalone or question
+    subs = await deps.reasoner.decompose(base)
+    ids = [*state["plan"]["exact_ids"], *(policy_ids(standalone) if standalone else [])]
+    queries = list(dict.fromkeys([base, question, *subs, *ids]))
+    return {"search_queries": queries, "standalone_question": standalone}
+
+
+def _questions(state: AgentState) -> list[str]:
+    """The user's question and, for follow-ups, its standalone form."""
+    return [q for q in (state["question"], state.get("standalone_question")) if q]
 
 
 @node("retrieve_documents")
@@ -186,7 +195,7 @@ async def rerank_results(state: AgentState, deps: AgentDeps) -> dict:
     evidence = state.get("evidence", [])
     if not evidence:
         return {"evidence": []}
-    question, ids = state["question"], state["plan"]["exact_ids"]
+    ids = state["plan"]["exact_ids"]
     top = max(e.score for e in evidence) or 1.0
     # Documents whose title block names a policy ID from the question get the
     # boost on every chunk, not just the chunk that repeats the ID.
@@ -197,8 +206,10 @@ async def rerank_results(state: AgentState, deps: AgentDeps) -> dict:
         if re.search(rf"(?:Policy|Document)\s+ID:\s*{re.escape(i)}\b", e.content, re.IGNORECASE)
     }
 
+    questions = _questions(state)
+
     def score(e):
-        s = 0.5 * (e.score / top) + 0.5 * coverage(question, [e])
+        s = 0.5 * (e.score / top) + 0.5 * max(coverage(q, [e]) for q in questions)
         if e.document_id in named_docs:
             s += 0.2
         elif any(i in e.content for i in ids):
@@ -223,13 +234,20 @@ async def rerank_results(state: AgentState, deps: AgentDeps) -> dict:
 
 @node("assess_evidence")
 async def assess_evidence(state: AgentState, deps: AgentDeps) -> dict:
-    assessment = await deps.reasoner.assess(state["question"], state.get("evidence", []))
+    evidence = state.get("evidence", [])
+    rank = {"sufficient": 2, "weak": 1, "none": 0}
+    # A follow-up counts as answerable if either form of the question is covered.
+    assessment = max(
+        [await deps.reasoner.assess(q, evidence) for q in _questions(state)],
+        key=lambda a: (rank[a.status], a.coverage),
+    )
     return {"evidence_status": assessment.status, "assessment_reason": assessment.reason}
 
 
 @node("rewrite_query")
 async def rewrite_query(state: AgentState, deps: AgentDeps) -> dict:
-    rewritten = await deps.reasoner.rewrite(state["question"], state.get("attempts", 0))
+    base = state.get("standalone_question") or state["question"]
+    rewritten = await deps.reasoner.rewrite(base, state.get("attempts", 0))
     return {"search_queries": list(dict.fromkeys([rewritten, *state["plan"]["exact_ids"]]))}
 
 
@@ -248,7 +266,8 @@ async def detect_conflicts_node(state: AgentState, deps: AgentDeps) -> dict:
             texts = [x.content for x in evidence if x.document_id == e.document_id]
             header = headers.get(e.version_id)
             metas[e.document_id] = parse_meta(e, header, [*texts, header or ""])
-    conflicts = detect_conflicts(evidence, metas, salient_terms(state["question"]))
+    terms = set().union(*(salient_terms(q) for q in _questions(state)))
+    conflicts = detect_conflicts(evidence, metas, terms)
     return {"conflicts": [(c, metas) for c in conflicts]}
 
 

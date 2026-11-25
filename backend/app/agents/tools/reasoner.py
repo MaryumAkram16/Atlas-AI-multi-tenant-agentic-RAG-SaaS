@@ -35,6 +35,30 @@ SYNONYMS = {
 }
 
 
+_FOLLOW_UP_START = re.compile(
+    r"^(and|also|what about|how about|what if|then|so|but|same for|in that case|ok(ay)?)\b",
+    re.IGNORECASE,
+)
+_BACK_REFERENCE = re.compile(
+    r"\b(it|its|they|them|their|that|those|these|this one|the same|he|she)\b", re.IGNORECASE
+)
+
+
+def previous_question(history: list[dict[str, str]]) -> str | None:
+    for message in reversed(history):
+        if message.get("role") == "user" and message.get("content", "").strip():
+            return message["content"].strip()
+    return None
+
+
+def looks_like_follow_up(question: str) -> bool:
+    q = question.strip()
+    if _FOLLOW_UP_START.match(q):
+        return True
+    # Short questions leaning on an earlier subject ("does it apply to...").
+    return len(q.split()) <= 8 and bool(_BACK_REFERENCE.search(q))
+
+
 def classify(question: str) -> str:
     q = question.strip()
     if _GREETING.match(q):
@@ -72,6 +96,15 @@ class HeuristicReasoner:
 
     def __init__(self, sufficient_coverage: float = 0.6) -> None:
         self.sufficient_coverage = sufficient_coverage
+
+    async def contextualize(self, question: str, history: list[dict[str, str]]) -> str | None:
+        """A standalone search question for a follow-up, or None if it stands alone.
+        Heuristic: merge with the previous user question (used for retrieval and
+        assessment only; the answer still addresses the user's own words)."""
+        previous = previous_question(history)
+        if not previous or not looks_like_follow_up(question):
+            return None
+        return f"{previous} {question}"
 
     async def decompose(self, question: str) -> list[str]:
         parts = [p.strip() for p in re.split(r"\?\s+", question) if p.strip()]
@@ -140,6 +173,24 @@ class LLMReasoner(HeuristicReasoner):
         if usage:
             self.usage.append(usage)
         return data if isinstance(data, dict) else None
+
+    async def contextualize(self, question: str, history: list[dict[str, str]]) -> str | None:
+        previous = previous_question(history)
+        if not previous or not looks_like_follow_up(question):
+            return None
+        transcript = "\n".join(
+            f"{m['role']}: {m['content'][:500]}" for m in history[-4:] if m.get("content")
+        )
+        data = await self._json(
+            "Rewrite the user's last question as one standalone question that can be "
+            "understood without the conversation. Keep its meaning; do not answer it. "
+            'Reply as JSON: {"question": "..."}.',
+            f"Conversation:\n{transcript}\n\nLast question: {question}",
+        )
+        standalone = data.get("question") if data else None
+        if isinstance(standalone, str) and standalone.strip():
+            return standalone.strip()[:500]
+        return await super().contextualize(question, history)
 
     async def decompose(self, question: str) -> list[str]:
         data = await self._json(

@@ -1,23 +1,23 @@
 # Full comparison: 2026-11-25
 
-- Dataset: `evaluations/datasets/hr_refund_v1.jsonl`: 105 questions (88 answerable with facts, 16 with no evidence, 16 with stale sources, 8 injection checks)
+- Dataset: `evaluations/datasets/hr_refund_v1.jsonl`: 111 questions (94 answerable with facts, 16 with no evidence, 16 with stale sources, 8 injection checks)
 - Corpus: `sample-data/acme` (80 chunks)
 - Generator: extractive / extractive; embeddings: hash (1536 dims); tokenizer: simple
 
 | Metric | dense | hybrid | hybrid+rerank | +rewrite | full agent |
 |---|---|---|---|---|---|
-| Fact accuracy (answerable) | 0.784 | 0.784 | 0.784 | 0.784 | 0.795 |
-| False abstention (answerable) ↓ | 0.091 | 0.102 | 0.091 | 0.091 | 0.091 |
+| Fact accuracy (answerable) | 0.777 | 0.787 | 0.787 | 0.777 | 0.787 |
+| False abstention (answerable) ↓ | 0.096 | 0.106 | 0.096 | 0.106 | 0.106 |
 | Correct abstention (no evidence) | 0.688 | 0.688 | 0.688 | 0.875 | 0.875 |
-| Evidence Recall@5 | 0.989 | 0.989 | 1.000 | 0.989 | 0.960 |
-| Citation precision | 0.773 | 0.783 | 0.767 | 0.767 | 0.802 |
-| Citation correctness | 0.950 | 0.962 | 0.950 | 0.950 | 0.938 |
+| Evidence Recall@5 | 0.979 | 0.979 | 0.996 | 0.975 | 0.949 |
+| Citation precision | 0.763 | 0.776 | 0.761 | 0.758 | 0.798 |
+| Citation correctness | 0.941 | 0.964 | 0.953 | 0.952 | 0.940 |
 | Faithfulness (proxy) | 1.000 | 1.000 | 1.000 | 1.000 | 1.000 |
 | Stale citation rate ↓ | 0.938 | 0.938 | 0.938 | 0.938 | 0.000 |
 | Injection resistance | 0.750 | 0.750 | 0.750 | 0.750 | 1.000 |
-| Avg retrieval attempts | 1.00 | 1.00 | 1.00 | 1.33 | 1.35 |
-| Latency p50 (ms) | 2.9 | 4.7 | 12.8 | 13.4 | 17.0 |
-| Latency p95 (ms) | 3.4 | 6.3 | 19.1 | 29.8 | 32.9 |
+| Avg retrieval attempts | 1.00 | 1.00 | 1.00 | 1.33 | 1.33 |
+| Latency p50 (ms) | 2.7 | 4.1 | 11.9 | 11.9 | 13.5 |
+| Latency p95 (ms) | 3.2 | 4.7 | 20.9 | 25.8 | 25.9 |
 | Tokens per question | 0 | 0 | 0 | 0 | 0 |
 
 ## How to read this

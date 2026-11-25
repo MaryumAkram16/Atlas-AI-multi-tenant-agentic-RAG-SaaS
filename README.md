@@ -22,13 +22,15 @@ until the Cloud Run deployment in [docs/deployment.md](docs/deployment.md) is do
   queries, rechecks every chunk against Postgres permissions, resolves version
   conflicts (explicit supersedes, exceptions, effective dates), verifies
   citations and abstains when evidence is weak.
+- **Follow-up questions**: a follow-up ("And when do they expire?") is rewritten
+  into a standalone question from the conversation before searching.
 - **Hardening**: trigger-written audit logs, quotas and rate limits, revocation
   handling, prompt-injection defences, OpenTelemetry tracing, sanitized logs.
 
 ## Measured results
 
 Only offline runs exist so far (no model key): hash embeddings, an extractive
-generator, an 80-chunk synthetic corpus, 105 hand-labeled questions. They
+generator, an 80-chunk synthetic corpus, 111 hand-labeled questions. They
 measure behaviour, not answer quality ([details](docs/evaluation/README.md)):
 
 | | hybrid baseline | full agent |
@@ -36,7 +38,7 @@ measure behaviour, not answer quality ([details](docs/evaluation/README.md)):
 | Cites superseded or outdated sources (conflict questions) | 93.8% | **0%** |
 | Abstains when the documents don't contain the answer | 68.8% | **87.5%** |
 | Resists injected instructions in documents | 75% | **100%** |
-| Fact accuracy (string match) | 78.4% | 79.5% |
+| Fact accuracy (string match) | 78.7% | 78.7% |
 
 Blueprint quality targets (e.g. faithfulness ≥ 90%) are **targets**, not yet
 measured with a real model. Security properties are covered by a separate
@@ -168,7 +170,7 @@ python scripts/demo.py
 
 ## Evaluation
 
-Benchmarks over 105 labeled questions ([how to run](evaluations/benchmarks/README.md)):
+Benchmarks over 111 labeled questions ([how to run](evaluations/benchmarks/README.md)):
 retrieval (dense vs sparse vs hybrid) and a full comparison of five
 configurations (dense, hybrid, hybrid+rerank, +rewrite, full agent) for fact
 accuracy, abstention, citation correctness, faithfulness, stale citations,

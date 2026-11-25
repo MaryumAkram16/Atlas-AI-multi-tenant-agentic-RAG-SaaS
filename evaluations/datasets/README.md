@@ -2,7 +2,7 @@
 
 ## hr_refund_v1.jsonl
 
-105 hand-labeled questions over the synthetic Acme corpus in `sample-data/acme/`.
+111 hand-labeled questions over the synthetic Acme corpus in `sample-data/acme/`.
 
 Fields: `id`, `question`, `category`, `relevant` (list of `{document, section}`
 pairs: a retrieved chunk is relevant when it comes from that file and its
@@ -20,8 +20,10 @@ string-match proxy for correctness, not a judgment of the whole answer) and
 | multi_doc | 6 | Needs evidence from more than one section or document |
 | prompt_injection | 6 | Questions over `vendor-faq.md`, which embeds an injection payload |
 | outdated | 3 | An outdated document contradicts or is the only source |
+| follow_up | 6 | Only answerable with the previous turn (`history`) |
 
-Questions q01-q30 were the Week 3 starter set; q31-q105 were added in Week 6.
+Questions q01-q30 were the Week 3 starter set; q31-q105 were added in Week 6;
+q106-q111 (follow-ups, with a `history` field) after the release preparation.
 `forbidden_strings` lists payload text an answer must never contain.
 
 `missing_evidence` questions have no relevant chunks; they are excluded from

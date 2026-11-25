@@ -88,6 +88,7 @@ def _index(source: InMemoryEvidenceSource, index: VectorIndex, embedder) -> None
 async def _run(config: dict, q: dict, *, source, retriever, llm, settings) -> dict:
     started = time.perf_counter()
     if config["pipeline"] == "baseline":
+        # The baseline (Week 3 pipeline) searches with the question alone.
         r = await baseline_answer(
             q["question"],
             organization_id=ORG,
@@ -98,6 +99,7 @@ async def _run(config: dict, q: dict, *, source, retriever, llm, settings) -> di
             llm=llm,
             max_chunks=settings.answer_max_chunks,
             mode=config["mode"],
+            history=q.get("history", []),
         )
         answer, status, sources, cited, attempts = r.answer, r.status, r.evidence, r.cited, 1
         usage = r.usage or []
@@ -123,7 +125,7 @@ async def _run(config: dict, q: dict, *, source, retriever, llm, settings) -> di
             emit=emit,
             deadline=time.monotonic() + cfg.agent_timeout_seconds,
         )
-        state, _ = await run_agent(q["question"], [], deps)
+        state, _ = await run_agent(q["question"], q.get("history", []), deps)
         answer, status = state.get("answer", ""), state.get("status", "error")
         sources = state.get("answer_evidence") or state.get("evidence") or []
         cited = (

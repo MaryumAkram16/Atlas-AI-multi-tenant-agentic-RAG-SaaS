@@ -37,6 +37,7 @@ async def baseline_answer(
     llm: ChatLLM,
     max_chunks: int = 8,
     mode: str = "hybrid",
+    history: list[dict[str, str]] | None = None,
 ) -> BaselineResult:
     cands = await run_in_threadpool(
         retriever.retrieve,
@@ -53,7 +54,7 @@ async def baseline_answer(
     if not evidence:
         return BaselineResult(INSUFFICIENT_EVIDENCE_ANSWER, "insufficient_evidence", [], [])
     parts, usage = [], []
-    async for event in llm.stream(build_messages(question, evidence, [])):
+    async for event in llm.stream(build_messages(question, evidence, history or [])):
         if isinstance(event, TextDelta):
             parts.append(event.text)
         elif isinstance(event, Usage):
