@@ -93,6 +93,17 @@ class VectorIndex:
                 self.collection, field, models.PayloadSchemaType.KEYWORD
             )
 
+    def wait_until_green(self, timeout: float = 30.0) -> None:
+        """Block until Qdrant reports the collection fully indexed (benchmarks
+        query right after bulk indexing, before optimizers settle)."""
+        import time
+
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            if self._client.get_collection(self.collection).status == models.CollectionStatus.GREEN:
+                return
+            time.sleep(0.2)
+
     def drop_collection(self) -> None:
         if self._client.collection_exists(self.collection):
             self._client.delete_collection(self.collection)

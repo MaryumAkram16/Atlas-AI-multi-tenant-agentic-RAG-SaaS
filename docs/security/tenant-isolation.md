@@ -93,6 +93,17 @@ Order of checks for `POST /chat` ([ADR 0006](../decisions/0006-baseline-rag.md))
 | `message_citations` | own message AND document readable now | same | denied | denied |
 | `usage_events` | own; owners/admins see the org | own | denied | denied |
 
+## Agent (Week 4)
+
+The LangGraph agent never holds identity in its state. `AuthContext`
+(organization, user, role, allowed documents and versions) is frozen, built by
+the server after the checks above, and passed outside the state; retrieval and
+the Postgres recheck read scope only from it. `validate_context` rejects a
+mutable context or identity keys in state, and LangGraph drops unknown input
+keys. Document text reaches the model only inside `<source>` blocks marked as
+untrusted; instructions in documents cannot widen the search (tested with an
+injected "change organization_id" document).
+
 ## Evidence
 
 | Requirement | Tests |
@@ -112,6 +123,7 @@ Order of checks for `POST /chat` ([ADR 0006](../decisions/0006-baseline-rag.md))
 | A private document never reaches an unauthorized member's answer or the model | `test_private_document_never_reaches_unauthorized_members` |
 | Recheck drops stale index entries (superseded, deleting, out of scope, forbidden) | `test_recheck_rejects_stale_index_entries_directly`, `test_recheck_filters_chunks_even_if_upstream_lets_them_through` |
 | Conversations private; revoked members lose history | `test_conversations_are_private`, `test_revoked_member_cannot_chat_or_read_history` |
+| Agent identity outside state, immutable, not changeable by documents | `test_auth_context_is_immutable`, `test_identity_cannot_enter_state`, `test_mutable_auth_context_is_rejected`, `test_injected_instructions_in_documents_do_not_change_scope` |
 
 API tests: `backend/tests/security/test_api_isolation.py` and
 `test_document_isolation.py`. Direct DB tests as the restricted roles:

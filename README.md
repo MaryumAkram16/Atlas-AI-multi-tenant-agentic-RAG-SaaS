@@ -4,10 +4,11 @@ Multi-tenant agentic RAG SaaS. Organizations upload documents (PDF, DOCX, TXT,
 MD) and ask questions; answers are grounded with citations, flag version
 conflicts, and abstain when evidence is weak.
 
-> **Status: Week 3, baseline RAG.** Multi-tenant foundation with RLS (Week 1),
-> document ingestion into Qdrant (Week 2), and chat: hybrid search with RRF,
-> a Postgres permission recheck, and streamed answers with citations (Week 3).
-> No agent, reranking or conflict handling yet.
+> **Status: Week 4, agentic RAG.** Multi-tenant foundation with RLS (Week 1),
+> document ingestion into Qdrant (Week 2), hybrid search with a Postgres
+> permission recheck (Week 3), and a bounded LangGraph agent that plans
+> retrieval, rewrites weak queries, resolves version conflicts, verifies
+> citations and abstains when evidence is weak (Week 4). No frontend yet.
 > Features, targets and metrics in the
 > [blueprint](docs/Atlas_AI_RAG_Project_Blueprint.pdf) are planned, not
 > implemented or measured.
@@ -91,7 +92,7 @@ Endpoints so far:
 | POST | `/v1/organizations/{org_id}/documents/{id}/reindex` | reprocess the current version (write access) |
 | GET | `/v1/organizations/{org_id}/documents/{id}/versions/{vid}/download-url` | short-lived signed URL (readers) |
 | GET | `/v1/organizations/{org_id}/jobs/{id}` | ingestion job status |
-| POST | `/v1/organizations/{org_id}/chat` | ask a question (all roles); SSE with `Accept: text/event-stream`, else JSON |
+| POST | `/v1/organizations/{org_id}/chat` | ask the agent (all roles); SSE (`meta`, `step`, `delta`, `citations`, `done`) with `Accept: text/event-stream`, else JSON with `status`, `evidence_status`, `citations`, `conflicts`, `retrieval_attempts`, `trace_id` |
 | GET | `/v1/organizations/{org_id}/conversations[/{id}]` | own conversations, messages and citations |
 
 Upload a document and watch it get indexed:
@@ -116,12 +117,13 @@ extractive generator that quotes matching sentences. Set both to `openai` with
 
 ## Evaluation
 
-Retrieval benchmark (dense vs sparse vs hybrid) over 30 labeled questions:
-see [evaluations/](evaluations/benchmarks/README.md). The first report
-([2026-11-25](evaluations/reports/2026-11-25-retrieval-baseline-hash.md)) was
-run with offline hash embeddings on a 38-chunk corpus and is a pipeline check,
-not a quality measurement. Blueprint targets (e.g. Recall@5 ≥ 85%) are targets,
-not results.
+Two benchmarks over 30 labeled questions ([how to run](evaluations/benchmarks/README.md)):
+retrieval (dense vs sparse vs hybrid) and answers (Week 3 baseline vs the
+agent). The reports so far ([index](evaluations/reports/README.md)) were run
+offline: hash embeddings, an extractive generator and a 38-chunk corpus. They
+check the pipeline and the agent's routing, conflict handling and abstention;
+they are not quality measurements. Blueprint targets (e.g. Recall@5 ≥ 85%,
+faithfulness ≥ 90%) are targets, not results.
 
 How isolation works and what is tested: [docs/security/tenant-isolation.md](docs/security/tenant-isolation.md).
 

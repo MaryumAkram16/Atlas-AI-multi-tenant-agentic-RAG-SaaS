@@ -24,8 +24,13 @@ class DocumentNotAllowed(Exception):
 
 @dataclass(frozen=True)
 class SearchScope:
-    document_ids: list[UUID]
-    version_ids: list[UUID]
+    """Immutable: what the caller may search. Built from Postgres, never from
+    model output. history_version_ids adds superseded versions, used only for
+    explicit version comparisons."""
+
+    document_ids: tuple[UUID, ...]
+    version_ids: tuple[UUID, ...]
+    history_version_ids: tuple[UUID, ...] = ()
 
 
 async def allowed_documents(
@@ -47,7 +52,51 @@ async def allowed_documents(
         if missing:
             raise DocumentNotAllowed()
         readable = {d: v for d, v in readable.items() if d in set(requested)}
-    return SearchScope(document_ids=list(readable), version_ids=list(readable.values()))
+    history: tuple[UUID, ...] = ()
+    if readable:
+        await cur.execute(
+            """
+            SELECT v.id FROM document_versions v
+            WHERE v.organization_id = %s AND v.document_id = ANY(%s)
+              AND v.status IN ('published', 'superseded')
+            """,
+            (org_id, list(readable)),
+        )
+        history = tuple(r["id"] for r in await cur.fetchall())
+    return SearchScope(
+        document_ids=tuple(readable),
+        version_ids=tuple(readable.values()),
+        history_version_ids=history,
+    )
+
+
+_CHUNKS_CURRENT = """
+    SELECT c.id, c.document_id, c.document_version_id, c.content, c.section,
+           c.page_start, c.page_end, d.title, v.version, v.effective_date
+    FROM document_chunks c
+    JOIN document_versions v ON v.id = c.document_version_id
+    JOIN documents d ON d.id = c.document_id
+    WHERE c.id = ANY(%s)
+      AND c.organization_id = %s
+      AND c.document_id = ANY(%s)
+      AND c.embedding_status = 'indexed'
+      AND d.status = 'ready'
+      AND v.status = 'published'
+      AND d.current_version_id = v.id
+"""
+_CHUNKS_WITH_HISTORY = """
+    SELECT c.id, c.document_id, c.document_version_id, c.content, c.section,
+           c.page_start, c.page_end, d.title, v.version, v.effective_date
+    FROM document_chunks c
+    JOIN document_versions v ON v.id = c.document_version_id
+    JOIN documents d ON d.id = c.document_id
+    WHERE c.id = ANY(%s)
+      AND c.organization_id = %s
+      AND c.document_id = ANY(%s)
+      AND c.embedding_status = 'indexed'
+      AND d.status = 'ready'
+      AND v.status IN ('published', 'superseded')
+"""
 
 
 async def load_authorized_chunks(
@@ -56,27 +105,17 @@ async def load_authorized_chunks(
     candidate_ids: Sequence[UUID],
     allowed_document_ids: Sequence[UUID],
     scores: dict[UUID, float] | None = None,
+    include_history: bool = False,
 ) -> list[Evidence]:
+    """include_history also admits superseded versions of allowed documents
+    (explicit comparisons only); otherwise only the current published version."""
     if not candidate_ids or not allowed_document_ids:
         return []
     cur = conn.cursor(row_factory=dict_row)
-    await cur.execute(
-        """
-        SELECT c.id, c.document_id, c.document_version_id, c.content, c.section,
-               c.page_start, c.page_end, d.title, v.version, v.effective_date
-        FROM document_chunks c
-        JOIN document_versions v ON v.id = c.document_version_id
-        JOIN documents d ON d.id = c.document_id
-        WHERE c.id = ANY(%s)
-          AND c.organization_id = %s
-          AND c.document_id = ANY(%s)
-          AND c.embedding_status = 'indexed'
-          AND v.status = 'published'
-          AND d.status = 'ready'
-          AND d.current_version_id = v.id
-        """,
-        (list(candidate_ids), org_id, list(allowed_document_ids)),
-    )
+    # Two fixed queries (no string-built SQL): current versions only, or
+    # current plus superseded versions for explicit comparisons.
+    query = _CHUNKS_WITH_HISTORY if include_history else _CHUNKS_CURRENT
+    await cur.execute(query, (list(candidate_ids), org_id, list(allowed_document_ids)))
     rows = {r["id"]: r for r in await cur.fetchall()}
     scores = scores or {}
     return [
@@ -96,3 +135,21 @@ async def load_authorized_chunks(
         for cid in candidate_ids
         if cid in rows
     ]
+
+
+async def load_version_headers(
+    conn: AsyncConnection, org_id: UUID, version_ids: Sequence[UUID]
+) -> dict[UUID, str]:
+    """First chunk of each version (title block: policy ID, supersedes,
+    status), read under RLS, for version comparison."""
+    if not version_ids:
+        return {}
+    cur = conn.cursor(row_factory=dict_row)
+    await cur.execute(
+        """
+        SELECT document_version_id, content FROM document_chunks
+        WHERE organization_id = %s AND document_version_id = ANY(%s) AND chunk_index = 0
+        """,
+        (org_id, list(version_ids)),
+    )
+    return {r["document_version_id"]: r["content"] for r in await cur.fetchall()}

@@ -40,7 +40,27 @@ class UsageOut(BaseModel):
     completion_tokens: int
 
 
-AnswerStatus = Literal["answered", "insufficient_evidence", "error"]
+AnswerStatus = Literal[
+    "answered", "insufficient_evidence", "clarification_needed", "direct", "error"
+]
+EvidenceStatus = Literal["sufficient", "weak", "none", "not_needed"]
+
+
+class ConflictDocument(BaseModel):
+    document_id: UUID
+    title: str
+    policy_id: str | None
+    effective_date: date | None
+    values: list[str]
+    status: Literal["current", "superseded", "outdated", "exception"]
+    reason: str | None
+
+
+class Conflict(BaseModel):
+    topic: str
+    resolution: Literal["resolved", "ambiguous", "unresolved"]
+    notes: list[str]
+    documents: list[ConflictDocument]
 
 
 class ChatResponse(BaseModel):
@@ -48,7 +68,11 @@ class ChatResponse(BaseModel):
     message_id: UUID
     answer: str
     status: AnswerStatus
+    evidence_status: EvidenceStatus
     citations: list[Citation]
+    conflicts: list[Conflict]
+    retrieval_attempts: int
+    trace_id: str
     retrieval: RetrievalStats
     usage: UsageOut | None
     latency_ms: int

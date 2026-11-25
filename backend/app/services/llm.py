@@ -86,7 +86,7 @@ class OpenAIChatLLM:
 
 
 _SOURCE = re.compile(r'<source id="(\d+)"[^>]*>(.*?)</source>', re.DOTALL)
-_SENTENCE = re.compile(r"(?<=[.!?])\s+|\n+")
+_SENTENCE = re.compile(r"(?<=[.!?])\s+|\n\s*\n")
 _QUESTION_WORDS = frozenset(
     "what which who whom whose when where why how many much do does did can could should "
     "would i my me we our you your get gets there their".split()
@@ -115,7 +115,9 @@ class ExtractiveLLM:
         q_terms = _terms(question)
         scored: list[tuple[int, int, int, str]] = []
         for source_id, body in _SOURCE.findall(user):
-            for i, sentence in enumerate(s.strip() for s in _SENTENCE.split(body)):
+            # Line wraps inside a paragraph are not sentence boundaries.
+            sentences = (" ".join(s.split()) for s in _SENTENCE.split(body))
+            for i, sentence in enumerate(sentences):
                 if sentence:
                     overlap = len(q_terms & _terms(sentence))
                     scored.append((overlap, -int(source_id), -i, sentence))

@@ -1,14 +1,14 @@
-"""Baseline RAG pipeline for one question:
+"""Chat orchestration around the LangGraph agent.
 
-validate scope (Postgres) -> hybrid search (Qdrant, filtered) -> recheck
-chunk IDs and load text (Postgres, RLS) -> top chunks -> grounded answer with
-citations -> persist message, citations and usage.
-
-Tenant identity comes only from the verified request context, never from the
-model or from document content.
+prepare() does the checks that must fail as normal HTTP errors (conversation
+ownership, document scope). run() persists the question, runs the agent with
+a server-built, immutable AuthContext, streams progress, then streams the
+*verified* answer and persists it with citations, conflicts and usage.
 """
 
+import asyncio
 import logging
+import re
 import time
 import uuid
 from collections.abc import AsyncIterator
@@ -17,22 +17,19 @@ from decimal import Decimal
 from typing import Any
 from uuid import UUID
 
-from fastapi.concurrency import run_in_threadpool
-
+from app.agents.graph import run_agent
+from app.agents.nodes import ContextViolation
+from app.agents.state import AgentDeps, AuthContext
+from app.agents.tools.evidence import PostgresEvidenceSource
+from app.agents.tools.reasoner import HeuristicReasoner, LLMReasoner
 from app.auth.dependencies import OrgContext
 from app.config import Settings
 from app.db.session import UserDB
 from app.repositories import chat as repo
-from app.retrieval.authorize import SearchScope, allowed_documents, load_authorized_chunks
+from app.retrieval.authorize import SearchScope, allowed_documents
 from app.retrieval.hybrid import HybridRetriever
-from app.services.answering import (
-    INSUFFICIENT_EVIDENCE_ANSWER,
-    Evidence,
-    build_messages,
-    is_insufficient,
-    parse_citations,
-)
-from app.services.llm import ChatLLM, TextDelta, Usage
+from app.services.answering import Evidence, parse_citations
+from app.services.llm import ChatLLM, Usage
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +40,7 @@ class ConversationNotFound(Exception):
 
 @dataclass
 class ChatEvent:
-    kind: str  # meta | delta | citations | done | error
+    kind: str  # meta | step | delta | citations | done | error
     data: dict[str, Any] = field(default_factory=dict)
 
 
@@ -63,7 +60,6 @@ async def prepare(
     conversation_id: UUID | None,
     document_ids: list[UUID] | None,
 ) -> PreparedChat:
-    """Validation that must fail with a normal HTTP error, before streaming."""
     async with db.transaction() as conn:
         if conversation_id is not None:
             if await repo.get_conversation(conn, ctx.org_id, conversation_id) is None:
@@ -78,7 +74,7 @@ async def prepare(
     )
 
 
-def _citation(position: int, ev: Evidence) -> dict[str, Any]:
+def citation_dict(position: int, ev: Evidence) -> dict[str, Any]:
     return {
         "position": position,
         "chunk_id": ev.chunk_id,
@@ -93,14 +89,30 @@ def _citation(position: int, ev: Evidence) -> dict[str, Any]:
     }
 
 
+def _total_usage(model: str, usages: list[Usage]) -> Usage | None:
+    if not usages:
+        return None
+    return Usage(
+        model=model,
+        prompt_tokens=sum(u.prompt_tokens for u in usages),
+        completion_tokens=sum(u.completion_tokens for u in usages),
+    )
+
+
 def _cost(settings: Settings, usage: Usage | None) -> Decimal | None:
     if usage is None or settings.llm_input_price_per_1m is None:
         return None
-    out_price = settings.llm_output_price_per_1m or 0.0
     cost = (
-        usage.prompt_tokens * settings.llm_input_price_per_1m + usage.completion_tokens * out_price
+        usage.prompt_tokens * settings.llm_input_price_per_1m
+        + usage.completion_tokens * (settings.llm_output_price_per_1m or 0.0)
     ) / 1_000_000
     return Decimal(str(round(cost, 6)))
+
+
+def build_reasoner(settings: Settings, llm: ChatLLM):
+    if settings.llm_provider == "openai":
+        return LLMReasoner(llm, settings.agent_sufficient_coverage)
+    return HeuristicReasoner(settings.agent_sufficient_coverage)
 
 
 async def run(
@@ -136,50 +148,76 @@ async def run(
             content=prepared.question,
         )
 
-    candidates = await run_in_threadpool(
-        retriever.retrieve,
-        prepared.question,
-        organization_id=org,
-        document_ids=prepared.scope.document_ids,
-        version_ids=prepared.scope.version_ids,
+    # Built by the server from the verified request; frozen; never in agent state.
+    auth = AuthContext(organization_id=org, user_id=user_id, role=ctx.role, scope=prepared.scope)
+    queue: asyncio.Queue[ChatEvent] = asyncio.Queue()
+
+    async def emit(kind: str, data: dict) -> None:
+        await queue.put(ChatEvent(kind, data))
+
+    reasoner = build_reasoner(settings, llm)
+    deps = AgentDeps(
+        auth=auth,
+        evidence=PostgresEvidenceSource(db, auth),
+        retriever=retriever,
+        llm=llm,
+        reasoner=reasoner,
+        settings=settings,
+        emit=emit,
+        deadline=time.monotonic() + settings.agent_timeout_seconds,
     )
-    async with db.transaction() as conn:
-        authorized = await load_authorized_chunks(
-            conn,
-            org,
-            [c.chunk_id for c in candidates],
-            prepared.scope.document_ids,
-            scores={c.chunk_id: c.score for c in candidates},
-        )
-    evidence = authorized[: settings.answer_max_chunks]
-    stats = {"candidates": len(candidates), "authorized": len(authorized), "used": len(evidence)}
+    task = asyncio.create_task(run_agent(prepared.question, history, deps))
+    while True:
+        getter = asyncio.create_task(queue.get())
+        done, _ = await asyncio.wait({task, getter}, return_when=asyncio.FIRST_COMPLETED)
+        if getter in done:
+            yield getter.result()
+        else:
+            getter.cancel()
+        if task in done:
+            break
+    while not queue.empty():
+        yield queue.get_nowait()
 
-    usage: Usage | None = None
-    status = "answered"
-    if not evidence:
-        answer, status = INSUFFICIENT_EVIDENCE_ANSWER, "insufficient_evidence"
-        yield ChatEvent("delta", {"text": answer})
-    else:
-        parts: list[str] = []
-        try:
-            messages = build_messages(prepared.question, evidence, history)
-            async for event in llm.stream(messages):
-                if isinstance(event, TextDelta):
-                    parts.append(event.text)
-                    yield ChatEvent("delta", {"text": event.text})
-                elif isinstance(event, Usage):
-                    usage = event
-            answer = "".join(parts).strip()
-            if is_insufficient(answer):
-                status = "insufficient_evidence"
-        except Exception as exc:
-            logger.warning("generation failed: %s", type(exc).__name__)
-            answer, status = "The answer could not be generated. Please try again.", "error"
-            yield ChatEvent("error", {"message": answer})
+    trace_id = uuid.uuid4().hex
+    try:
+        state, trace_id = task.result()
+    except ContextViolation:
+        logger.error("agent context violation trace_id=%s", trace_id)
+        state = {"status": "error", "answer": "The answer could not be generated."}
+    except Exception as exc:
+        logger.warning("agent failed: %s trace_id=%s", type(exc).__name__, trace_id)
+        state = {
+            "status": "error",
+            "answer": "The answer could not be generated. Please try again.",
+        }
 
-    cited = parse_citations(answer, len(evidence)) if status == "answered" else []
-    citations = [_citation(n, evidence[n - 1]) for n in cited]
+    answer = state.get("answer") or ""
+    status = state.get("status") or "error"
+    answer_evidence = state.get("answer_evidence") or []
+    cited = parse_citations(answer, len(answer_evidence)) if status == "answered" else []
+    citations = [citation_dict(n, answer_evidence[n - 1]) for n in cited]
+    usage = _total_usage(llm.name, [*state.get("usage", []), *getattr(reasoner, "usage", [])])
     latency_ms = int((time.perf_counter() - started) * 1000)
+    details = {
+        "trace_id": trace_id,
+        "evidence_status": state.get("evidence_status", "none"),
+        "conflicts": state.get("conflicts", [])
+        if isinstance(state.get("conflicts"), list)
+        and all(isinstance(c, dict) for c in state.get("conflicts", []))
+        else [],
+        "retrieval_attempts": state.get("attempts", 0),
+        "steps": state.get("steps", 0),
+    }
+    stats = {
+        "candidates": len(state.get("candidates") or []),
+        "authorized": state.get("authorized_count", 0),
+        "used": len(answer_evidence),
+    }
+
+    # Only verified text is streamed to the client.
+    for piece in re.findall(r"\S+\s*", answer):
+        yield ChatEvent("delta", {"text": piece})
 
     async with db.transaction() as conn:
         await repo.insert_message(
@@ -190,27 +228,42 @@ async def run(
             role="assistant",
             content=answer,
             status=status,
-            metadata={"retrieval": stats, "latency_ms": latency_ms, "model": llm.name},
+            metadata={
+                **details,
+                "retrieval": stats,
+                "latency_ms": latency_ms,
+                "model": llm.name,
+                "trace": state.get("trace", []),
+                "verification": state.get("verification"),
+            },
         )
         await repo.insert_citations(conn, org, prepared.message_id, citations)
-        if usage is not None or evidence:
+        if usage is not None:
             await repo.insert_usage(
                 conn,
                 org_id=org,
                 user_id=user_id,
                 message_id=prepared.message_id,
-                model=usage.model if usage else llm.name,
-                prompt_tokens=usage.prompt_tokens if usage else 0,
-                completion_tokens=usage.completion_tokens if usage else 0,
+                model=usage.model,
+                prompt_tokens=usage.prompt_tokens,
+                completion_tokens=usage.completion_tokens,
                 estimated_cost=_cost(settings, usage),
             )
         await repo.touch_conversation(conn, prepared.conversation_id)
 
+    logger.info(
+        "chat answered trace_id=%s status=%s attempts=%s steps=%s",
+        trace_id,
+        status,
+        details["retrieval_attempts"],
+        details["steps"],
+    )
     yield ChatEvent("citations", {"citations": citations})
     yield ChatEvent(
         "done",
         {
             "status": status,
+            **details,
             "retrieval": stats,
             "usage": usage.__dict__ if usage else None,
             "latency_ms": latency_ms,

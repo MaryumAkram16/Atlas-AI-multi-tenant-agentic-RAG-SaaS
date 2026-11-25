@@ -8,6 +8,11 @@ configuration, dataset and corpus.
 |---|---|---|
 | [2026-11-25-retrieval-baseline-hash](2026-11-25-retrieval-baseline-hash.md) | Week 3 baseline: dense vs sparse vs hybrid | Offline hash embeddings and `simple` tokenizer (no OpenAI key or tiktoken download in the environment that ran it); 38-chunk corpus. Not representative of production quality. |
 
+| [2026-11-25-answers-offline](2026-11-25-answers-offline.md) | Week 4: baseline pipeline vs LangGraph agent | Offline extractive generator and hash embeddings; measures routing, conflict handling, abstention and citations, not answer quality. |
+
 Observed variance: one of five runs of the baseline gave sparse MRR 0.859
 instead of 0.840 (all other metrics identical). The cause is not yet confirmed;
-the likeliest is Qdrant's IDF statistics settling after indexing.
+the likeliest is Qdrant's IDF statistics settling after indexing. Benchmarks now
+wait for the collection to report green before querying. In the answer
+benchmark the agent's numbers were identical across five runs after that change;
+the baseline's citation precision still varied between 0.674 and 0.694.

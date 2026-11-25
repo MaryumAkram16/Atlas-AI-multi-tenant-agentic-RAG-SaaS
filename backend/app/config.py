@@ -74,6 +74,14 @@ class Settings(BaseSettings):
     llm_input_price_per_1m: float | None = Field(default=None, ge=0)
     llm_output_price_per_1m: float | None = Field(default=None, ge=0)
 
+    # Agent limits
+    agent_max_steps: int = Field(default=24, ge=6, le=100)
+    agent_max_rewrites: int = Field(default=2, ge=0, le=5)
+    agent_max_corrections: int = Field(default=1, ge=0, le=3)
+    agent_timeout_seconds: float = Field(default=45, gt=0)
+    agent_max_evidence_tokens: int = Field(default=6000, ge=500)
+    agent_sufficient_coverage: float = Field(default=0.6, gt=0, le=1)
+
     # Job queue
     job_max_attempts: int = Field(default=5, ge=1, le=20)
     job_backoff_base_seconds: float = Field(default=5.0, ge=0)

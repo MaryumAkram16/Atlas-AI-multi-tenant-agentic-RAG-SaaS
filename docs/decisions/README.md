@@ -11,3 +11,4 @@ sequentially, and add it to the index below.
 | [0004](0004-tenant-isolation-model.md) | Tenant isolation: restricted role, JWT claims and RLS | Accepted |
 | [0005](0005-ingestion-pipeline.md) | Ingestion pipeline, worker role and document ACLs | Accepted |
 | [0006](0006-baseline-rag.md) | Baseline RAG: retrieval, recheck, generation and citations | Accepted |
+| [0007](0007-langgraph-agent.md) | LangGraph agent: bounded graph, immutable auth context, deterministic checks | Accepted |

@@ -101,6 +101,7 @@ def run(settings: Settings, dataset: Path, corpus: Path, modes=MODES) -> dict:
     index.ensure_collection()
     try:
         corpus_info = index_corpus(corpus, index, embedder, tokenizer, settings)
+        index.wait_until_green()
         retriever = HybridRetriever(
             index,
             embedder,
