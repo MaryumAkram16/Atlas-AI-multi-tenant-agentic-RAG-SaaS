@@ -1,0 +1,127 @@
+name: Deploy
+
+# Runs after CI succeeds on main (or manually). Keyless auth to Google Cloud via
+# Workload Identity Federation; app secrets live in Secret Manager, deploy
+# configuration in the "production" GitHub environment.
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+      REGION: ${{ vars.GCP_REGION }}
+      SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.SHA }}
+
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOY_SA }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Build and push the backend image
+        run: |
+          IMAGE="${REGION}-docker.pkg.dev/${PROJECT_ID}/atlas/backend:${SHA}"
+          echo "IMAGE=${IMAGE}" >> "$GITHUB_ENV"
+          gcloud auth configure-docker "${REGION}-docker.pkg.dev" --quiet
+          docker build -t "${IMAGE}" backend
+          docker push "${IMAGE}"
+
+      - name: Write runtime configuration (non-secret)
+        env:
+          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          QDRANT_URL: ${{ vars.QDRANT_URL }}
+          CORS_ALLOWED_ORIGINS: ${{ vars.CORS_ALLOWED_ORIGINS }}
+          LLM_MODEL: ${{ vars.LLM_MODEL || 'gpt-4o-mini' }}
+          LLM_INPUT_PRICE_PER_1M: ${{ vars.LLM_INPUT_PRICE_PER_1M }}
+          LLM_OUTPUT_PRICE_PER_1M: ${{ vars.LLM_OUTPUT_PRICE_PER_1M }}
+          EMBEDDING_PROVIDER: ${{ vars.EMBEDDING_PROVIDER || 'openai' }}
+          LLM_PROVIDER: ${{ vars.LLM_PROVIDER || 'openai' }}
+        run: |
+          python3 - <<'PY'
+          import json, os
+          url = os.environ["SUPABASE_URL"].rstrip("/")
+          env = {
+              "APP_ENV": "production",
+              "LOG_FORMAT": "json",
+              "SUPABASE_URL": url,
+              "SUPABASE_JWT_ISSUER": f"{url}/auth/v1",
+              "SUPABASE_JWKS_URL": f"{url}/auth/v1/.well-known/jwks.json",
+              "SUPABASE_JWT_AUDIENCE": "authenticated",
+              "STORAGE_BACKEND": "supabase",
+              "SUPABASE_STORAGE_BUCKET": "documents",
+              "QDRANT_URL": os.environ["QDRANT_URL"],
+              "CORS_ALLOWED_ORIGINS": os.environ.get("CORS_ALLOWED_ORIGINS", ""),
+              "EMBEDDING_PROVIDER": os.environ["EMBEDDING_PROVIDER"],
+              "LLM_PROVIDER": os.environ["LLM_PROVIDER"],
+              "LLM_MODEL": os.environ["LLM_MODEL"],
+              "TOKENIZER": "tiktoken",
+          }
+          for key in ("LLM_INPUT_PRICE_PER_1M", "LLM_OUTPUT_PRICE_PER_1M"):
+              if os.environ.get(key):
+                  env[key] = os.environ[key]
+          with open("runtime-env.yaml", "w") as f:
+              for k, v in env.items():
+                  f.write(f"{k}: {json.dumps(v)}\n")
+          PY
+
+      - name: Run database migrations (Cloud Run Job)
+        run: |
+          gcloud run jobs deploy atlas-migrate --image "${IMAGE}" --region "${REGION}" \
+            --service-account "atlas-worker@${PROJECT_ID}.iam.gserviceaccount.com" \
+            --command python --args="-m,app.db.manage,migrate" \
+            --env-vars-file runtime-env.yaml \
+            --set-secrets "MIGRATION_DATABASE_URL=ATLAS_MIGRATION_DATABASE_URL:latest,ATLAS_API_DB_PASSWORD=ATLAS_API_DB_PASSWORD:latest,ATLAS_WORKER_DB_PASSWORD=ATLAS_WORKER_DB_PASSWORD:latest" \
+            --max-retries 0 --task-timeout 600
+          gcloud run jobs execute atlas-migrate --region "${REGION}" --wait
+
+      - name: Deploy the API (Cloud Run service)
+        run: |
+          gcloud run deploy atlas-api --image "${IMAGE}" --region "${REGION}" \
+            --service-account "atlas-api@${PROJECT_ID}.iam.gserviceaccount.com" \
+            --allow-unauthenticated --port 8000 --cpu 1 --memory 1Gi \
+            --min-instances 0 --max-instances "${{ vars.API_MAX_INSTANCES || 3 }}" \
+            --concurrency 40 --timeout 300 \
+            --env-vars-file runtime-env.yaml \
+            --set-secrets "DATABASE_URL=ATLAS_DATABASE_URL:latest,OPENAI_API_KEY=OPENAI_API_KEY:latest,QDRANT_API_KEY=QDRANT_API_KEY:latest,SUPABASE_SERVICE_ROLE_KEY=SUPABASE_SERVICE_ROLE_KEY:latest"
+          URL=$(gcloud run services describe atlas-api --region "${REGION}" --format='value(status.url)')
+          echo "API_URL=${URL}" >> "$GITHUB_ENV"
+          echo "API: ${URL}" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Deploy the ingestion worker (Cloud Run Job, run every minute by Cloud Scheduler)
+        run: |
+          gcloud run jobs deploy atlas-worker --image "${IMAGE}" --region "${REGION}" \
+            --service-account "atlas-worker@${PROJECT_ID}.iam.gserviceaccount.com" \
+            --command python --args="-m,app.workers.main,--drain,--max-seconds,840" \
+            --cpu 1 --memory 2Gi --task-timeout 900 --max-retries 0 --parallelism 1 \
+            --env-vars-file runtime-env.yaml \
+            --set-secrets "WORKER_DATABASE_URL=ATLAS_WORKER_DATABASE_URL:latest,OPENAI_API_KEY=OPENAI_API_KEY:latest,QDRANT_API_KEY=QDRANT_API_KEY:latest,SUPABASE_SERVICE_ROLE_KEY=SUPABASE_SERVICE_ROLE_KEY:latest"
+
+      - name: Smoke check
+        run: |
+          for i in $(seq 1 20); do
+            if curl -fsS "${API_URL}/ready"; then echo; exit 0; fi
+            sleep 6
+          done
+          echo "API did not become ready" >&2
+          exit 1

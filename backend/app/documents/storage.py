@@ -127,11 +127,12 @@ class SupabaseStorage:
                 headers=self._headers,
             )
         ).json()
-        names = [f"{prefix.rstrip('/')}/{item['name']}" for item in listing]
-        for name in names:
-            if not name.rsplit("/", 1)[-1].count("."):  # a "folder": recurse
-                self.delete_prefix(name + "/")
-        files = [n for n in names if n.rsplit("/", 1)[-1].count(".")]
+        base = prefix.rstrip("/")
+        # Supabase lists sub-folders as entries without an id.
+        for item in listing:
+            if item.get("id") is None:
+                self.delete_prefix(f"{base}/{item['name']}/")
+        files = [f"{base}/{item['name']}" for item in listing if item.get("id") is not None]
         if files:
             self._check(
                 self._client.request(

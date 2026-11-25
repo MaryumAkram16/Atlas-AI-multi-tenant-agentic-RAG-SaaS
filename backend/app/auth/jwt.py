@@ -42,12 +42,19 @@ class JWTVerifier:
             )
 
     def _key_and_algorithms(self, token: str):
-        # Pick the algorithm list from server config, never from the token
-        # header, so an HS256 token cannot be checked against a public key.
+        # Each key type is paired with its own algorithms, never chosen by the
+        # token alone: an HS256 token is only ever checked against the shared
+        # secret (if one is configured), never against a JWKS public key.
+        try:
+            alg = jwt.get_unverified_header(token).get("alg")
+        except jwt.PyJWTError:
+            raise AuthError("invalid token header") from None
+        if alg == "HS256":
+            if self._secret:
+                return self._secret, ["HS256"]
+            raise AuthError("HS256 tokens are not accepted")
         if self._jwks is not None:
             return self._jwks.get_signing_key_from_jwt(token).key, ASYMMETRIC_ALGORITHMS
-        if self._secret:
-            return self._secret, ["HS256"]
         raise AuthError("authentication is not configured")
 
     def verify(self, token: str) -> AuthUser:
@@ -63,7 +70,7 @@ class JWTVerifier:
             )
         except AuthError:
             raise
-        except jwt.PyJWTError as exc:
+        except (jwt.PyJWTError, jwt.PyJWKClientError) as exc:
             raise AuthError(f"invalid token: {type(exc).__name__}") from None
 
         if claims.get("role") != "authenticated":

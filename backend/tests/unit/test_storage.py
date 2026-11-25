@@ -61,3 +61,28 @@ def test_supabase_storage_uses_service_key_server_side():
     assert url == "https://proj.supabase.co/storage/v1/object/sign/docs/p?token=t"
     assert all(r.headers["authorization"] == "Bearer service-key" for r in seen)
     assert seen[1].read() == b'{"expiresIn":60}'
+
+
+def test_supabase_delete_prefix_recurses_into_folders():
+    deleted = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        import json
+
+        body = json.loads(request.content or b"{}")
+        if request.url.path.endswith("/object/list/docs"):
+            if body["prefix"] == "o/d":
+                return httpx.Response(200, json=[{"name": "v1", "id": None}])
+            return httpx.Response(200, json=[{"name": "a.txt", "id": "1"}])
+        if request.method == "DELETE":
+            deleted.extend(body["prefixes"])
+        return httpx.Response(200, json={})
+
+    store = SupabaseStorage(
+        "https://p.supabase.co",
+        "k",
+        "docs",
+        client=httpx.Client(transport=httpx.MockTransport(handler)),
+    )
+    store.delete_prefix("o/d/")
+    assert deleted == ["o/d/v1/a.txt"]

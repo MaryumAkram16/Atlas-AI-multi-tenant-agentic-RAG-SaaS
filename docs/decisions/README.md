@@ -14,3 +14,4 @@ sequentially, and add it to the index below.
 | [0007](0007-langgraph-agent.md) | LangGraph agent: bounded graph, immutable auth context, deterministic checks | Accepted |
 | [0008](0008-frontend-and-local-auth.md) | Frontend: React SPA on one origin, real Supabase Auth locally | Accepted |
 | [0009](0009-hardening.md) | Hardening: audit triggers, Postgres limits, revocation, telemetry, injection filter | Accepted |
+| [0010](0010-deployment.md) | Deployment: Cloud Run, Supabase, Qdrant Cloud, Vercel | Accepted |

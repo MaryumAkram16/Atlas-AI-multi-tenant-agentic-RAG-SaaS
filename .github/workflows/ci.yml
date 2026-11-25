@@ -29,6 +29,9 @@ jobs:
         run: ruff check .
       - name: Format check
         run: ruff format --check .
+      - name: API reference is up to date
+        working-directory: .
+        run: python scripts/generate_api_reference.py --check
       - name: Security suite (tenant isolation, injection, revocation, audit, limits)
         run: pytest tests/security
         env:

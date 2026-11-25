@@ -1,25 +1,56 @@
 # Atlas AI
 
-Multi-tenant agentic RAG SaaS. Organizations upload documents (PDF, DOCX, TXT,
-MD) and ask questions; answers are grounded with citations, flag version
-conflicts, and abstain when evidence is weak.
+Multi-tenant agentic RAG SaaS. Companies sign up, create an organization,
+invite members, upload documents (PDF, DOCX, TXT, MD) and ask questions.
+Answers cite their sources, flag conflicting policy versions, and say so when
+the evidence isn't there. Each organization's data is isolated by Postgres
+row-level security, not just application code.
 
-> **Status: Week 6, hardened.** Audit logs, quotas, rate limits, revocation
-> handling, OpenTelemetry tracing, prompt-injection defences and a 105-question
-> evaluation on top of the following. **Week 5, web app.** Multi-tenant foundation with RLS (Week 1),
-> document ingestion into Qdrant (Week 2), hybrid search with a Postgres
-> permission recheck (Week 3), a bounded LangGraph agent with conflict handling,
-> citation checks and abstention (Week 4), and a React app with Supabase Auth
-> for sign-up, workspaces, the knowledge base, chat and member admin (Week 5).
-> Features, targets and metrics in the
-> [blueprint](docs/Atlas_AI_RAG_Project_Blueprint.pdf) are planned, not
-> implemented or measured.
+**Live demo:** not deployed yet. The frontend is on Vercel
+(https://atlas-ai-lake-sigma.vercel.app) but is not connected to a hosted backend
+until the Cloud Run deployment in [docs/deployment.md](docs/deployment.md) is done.
 
-## Stack
-FastAPI · Pydantic · Supabase Postgres/Auth/Storage · Qdrant (dense + BM25
-sparse, RRF) · Postgres-backed job queue · LangGraph · React + TypeScript ·
-Docker Compose · GitHub Actions · OpenTelemetry. See [CLAUDE.md](CLAUDE.md)
-for the security rules and layout, and [docs/decisions](docs/decisions) for ADRs.
+![Chat answer with conflict resolution and a source preview](docs/screenshots/chat-conflict-citations.png)
+
+## What it does
+
+- **Workspaces and roles**: organizations, invitations, owner/admin/member/viewer,
+  per-document ACLs; Supabase Auth.
+- **Knowledge base**: uploads with versions, background ingestion (parse, chunk,
+  dense + BM25 embeddings), duplicate detection, safe delete, signed downloads.
+- **Agentic answers**: a bounded LangGraph agent plans retrieval, rewrites weak
+  queries, rechecks every chunk against Postgres permissions, resolves version
+  conflicts (explicit supersedes, exceptions, effective dates), verifies
+  citations and abstains when evidence is weak.
+- **Hardening**: trigger-written audit logs, quotas and rate limits, revocation
+  handling, prompt-injection defences, OpenTelemetry tracing, sanitized logs.
+
+## Measured results
+
+Only offline runs exist so far (no model key): hash embeddings, an extractive
+generator, an 80-chunk synthetic corpus, 105 hand-labeled questions. They
+measure behaviour, not answer quality ([details](docs/evaluation/README.md)):
+
+| | hybrid baseline | full agent |
+|---|---|---|
+| Cites superseded or outdated sources (conflict questions) | 93.8% | **0%** |
+| Abstains when the documents don't contain the answer | 68.8% | **87.5%** |
+| Resists injected instructions in documents | 75% | **100%** |
+| Fact accuracy (string match) | 78.4% | 79.5% |
+
+Blueprint quality targets (e.g. faithfulness ≥ 90%) are **targets**, not yet
+measured with a real model. Security properties are covered by a separate
+test suite (cross-tenant access via the API and directly in Postgres, every
+endpoint swept, injection, revocation); see [docs/security](docs/security/README.md).
+
+## Documentation
+
+[Architecture](docs/architecture/README.md) ·
+[Security model](docs/security/README.md) ·
+[API reference](docs/api/README.md) ·
+[Evaluation](docs/evaluation/README.md) ·
+[Deployment](docs/deployment.md) ·
+[Decisions (ADRs)](docs/decisions/README.md)
 
 ## Local setup
 
@@ -125,6 +156,15 @@ Locally `EMBEDDING_PROVIDER=hash` and `LLM_PROVIDER=extractive` run without any
 API key: deterministic offline vectors with no semantic quality, and an
 extractive generator that quotes matching sentences. Set both to `openai` with
 `OPENAI_API_KEY` for real embeddings and answers (then reindex).
+
+## Demo script
+
+Shows Acme vs Nova isolation and the refund-policy conflict answer, against
+the local stack or a deployment (see the script header for hosted settings):
+
+```bash
+python scripts/demo.py
+```
 
 ## Evaluation
 

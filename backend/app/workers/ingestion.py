@@ -66,7 +66,10 @@ class IngestionWorker:
         backoff_base: float,
         backoff_cap: float,
     ) -> None:
-        self.conn = psycopg.connect(conninfo, autocommit=True, row_factory=dict_row)
+        # prepare_threshold=None: works behind transaction-mode poolers (Supavisor).
+        self.conn = psycopg.connect(
+            conninfo, autocommit=True, row_factory=dict_row, prepare_threshold=None
+        )
         self.worker_id = worker_id
         self.storage = storage
         self.embedder = embedder

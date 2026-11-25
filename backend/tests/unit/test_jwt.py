@@ -101,6 +101,30 @@ def test_jwks_asymmetric_keys(monkeypatch):
     token = mint_token(USER, secret=private_key, algorithm="ES256")
     assert verifier.verify(token).user_id == USER
 
-    # An HS256 token signed with a guessable secret must not pass the JWKS path.
+    # Without a configured secret, HS256 tokens are rejected outright.
     with pytest.raises(AuthError):
         verifier.verify(mint_token(USER))
+
+
+def test_jwks_and_legacy_secret_together(monkeypatch):
+    """Projects migrating signing keys can accept both, each with its own key."""
+    from cryptography.hazmat.primitives.asymmetric import ec
+
+    private_key = ec.generate_private_key(ec.SECP256R1())
+    verifier = JWTVerifier(
+        Settings(
+            supabase_jwks_url="https://project.supabase.co/auth/v1/.well-known/jwks.json",
+            supabase_jwt_secret=JWT_SECRET,
+            supabase_jwt_issuer=JWT_ISSUER,
+            supabase_jwt_audience=JWT_AUDIENCE,
+        )
+    )
+
+    class FakeKey:
+        key = private_key.public_key()
+
+    monkeypatch.setattr(verifier._jwks, "get_signing_key_from_jwt", lambda _t: FakeKey())
+    assert verifier.verify(mint_token(USER, secret=private_key, algorithm="ES256")).user_id == USER
+    assert verifier.verify(mint_token(USER)).user_id == USER  # HS256 with the secret
+    with pytest.raises(AuthError):  # HS256 signed with anything else
+        verifier.verify(mint_token(USER, secret="x" * 40))
