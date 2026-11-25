@@ -11,6 +11,8 @@ RUN useradd --create-home --uid 10001 atlas
 COPY pyproject.toml ./
 COPY app ./app
 RUN pip install .
+COPY alembic.ini ./
+COPY migrations ./migrations
 
 USER atlas
 EXPOSE 8000
