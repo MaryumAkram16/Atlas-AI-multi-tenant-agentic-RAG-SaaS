@@ -103,7 +103,7 @@ jobs:
             --min-instances 0 --max-instances "${{ vars.API_MAX_INSTANCES || 3 }}" \
             --concurrency 40 --timeout 300 \
             --env-vars-file runtime-env.yaml \
-            --set-secrets "DATABASE_URL=ATLAS_DATABASE_URL:latest,OPENAI_API_KEY=OPENAI_API_KEY:latest,QDRANT_API_KEY=QDRANT_API_KEY:latest,SUPABASE_SERVICE_ROLE_KEY=SUPABASE_SERVICE_ROLE_KEY:latest"
+            --set-secrets "DATABASE_URL=ATLAS_DATABASE_URL:latest,OPENAI_API_KEY=OPENAI_API_KEY:latest,QDRANT_API_KEY=QDRANT_API_KEY:latest,SUPABASE_SERVICE_ROLE_KEY=SUPABASE_SERVICE_ROLE_KEY:latest,SUPABASE_JWT_SECRET=SUPABASE_JWT_SECRET:latest"
           URL=$(gcloud run services describe atlas-api --region "${REGION}" --format='value(status.url)')
           echo "API_URL=${URL}" >> "$GITHUB_ENV"
           echo "API: ${URL}" >> "$GITHUB_STEP_SUMMARY"

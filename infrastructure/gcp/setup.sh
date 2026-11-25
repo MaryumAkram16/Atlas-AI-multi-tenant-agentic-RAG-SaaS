@@ -100,12 +100,16 @@ fi
 ask_secret OPENAI_API_KEY "OpenAI API key (leave empty to add later)"
 ask_secret QDRANT_API_KEY "Qdrant Cloud API key"
 ask_secret SUPABASE_SERVICE_ROLE_KEY "Supabase service_role key (server-side Storage only)"
+ask_secret SUPABASE_JWT_SECRET "Supabase legacy JWT secret (Project settings > JWT Keys; for HS256 sessions)"
 
 grant() { # secret service-account
   gcloud secrets add-iam-policy-binding "$1" --quiet --role=roles/secretmanager.secretAccessor \
     --member="serviceAccount:$(sa "$2")" >/dev/null
 }
-for s in ATLAS_DATABASE_URL OPENAI_API_KEY QDRANT_API_KEY SUPABASE_SERVICE_ROLE_KEY; do grant "$s" atlas-api; done
+for s in ATLAS_DATABASE_URL OPENAI_API_KEY QDRANT_API_KEY SUPABASE_SERVICE_ROLE_KEY \
+         SUPABASE_JWT_SECRET; do
+  grant "$s" atlas-api
+done
 for s in ATLAS_WORKER_DATABASE_URL ATLAS_MIGRATION_DATABASE_URL ATLAS_API_DB_PASSWORD \
          ATLAS_WORKER_DB_PASSWORD OPENAI_API_KEY QDRANT_API_KEY SUPABASE_SERVICE_ROLE_KEY; do
   grant "$s" atlas-worker

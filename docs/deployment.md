@@ -6,6 +6,12 @@ storage on a dedicated Supabase project, vectors on Qdrant Cloud
 
 ## 1. Supabase project
 
+> Done for this deployment: project `atlas-ai` (ref `gfgnhrgasxqgijmcnivp`,
+> region `ap-northeast-1`) exists, the private `documents` bucket is created, and
+> Vercel has `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY`. Remaining: reset and
+> note the database password, set the Auth Site URL, copy the service_role key
+> and legacy JWT secret for step 3. Use a matching GCP region (`asia-northeast1`).
+
 1. Create a project named `atlas-ai` (not one shared with another app). Note the
    **project ref**, the **database password**, and from **Connect** the
    **transaction pooler host** (e.g. `aws-0-eu-west-1.pooler.supabase.com`).
@@ -29,8 +35,9 @@ git clone https://github.com/MaryumAkram16/Atlas-AI-multi-tenant-agentic-RAG-Saa
 PROJECT_ID=<gcp-project> REGION=europe-west1 SUPABASE_REF=<ref> SUPABASE_POOLER_HOST=<pooler-host> BILLING_ACCOUNT=<billing-account-id> bash infrastructure/gcp/setup.sh
 ```
 
-The script prompts for the Supabase database password, OpenAI key, Qdrant key
-and Supabase service_role key, stores them in Secret Manager (never printed),
+The script prompts for the Supabase database password, OpenAI key, Qdrant key,
+Supabase service_role key and legacy JWT secret (tokens signed with the
+project's asymmetric keys are verified via JWKS; HS256 ones with the secret), stores them in Secret Manager (never printed),
 generates the `atlas_api`/`atlas_worker` database passwords, sets up keyless
 GitHub deploys, the worker schedule and a budget alert, and prints the GitHub
 variables to add.
