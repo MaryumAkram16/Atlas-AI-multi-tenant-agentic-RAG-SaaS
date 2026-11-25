@@ -30,12 +30,16 @@ from app.auth.dependencies import DB, Org, OrgContext
 from app.documents.storage import LocalStorage, object_path
 from app.documents.validation import UploadError, safe_filename, validate_upload
 from app.repositories import documents as repo
+from app.repositories import tenants as tenants_repo
 from app.schemas.documents import (
     ChunkPreview,
     DocumentDetail,
     DocumentOut,
+    DocumentPermissionOut,
+    DocumentUpdate,
     DownloadUrl,
     JobOut,
+    PermissionGrant,
     UploadAccepted,
     VersionOut,
     Visibility,
@@ -232,6 +236,86 @@ async def get_document(document_id: UUID, ctx: Org, db: DB) -> DocumentDetail:
         current_version=VersionOut(**current) if current else None,
         versions=[VersionOut(**v) for v in versions],
     )
+
+
+@router.patch("/documents/{document_id}")
+async def update_document(document_id: UUID, body: DocumentUpdate, ctx: Org, db: DB) -> DocumentOut:
+    """Rename a document or change its visibility (write access).
+
+    Visibility takes effect at once: retrieval asks Postgres for the readable
+    document IDs on every question, so nothing in Qdrant needs to change.
+    """
+    async with db.transaction() as conn:
+        doc = await _require_write(conn, ctx, document_id)
+        if doc["status"] == "deleting":
+            raise HTTPException(status.HTTP_409_CONFLICT, detail="document is being deleted")
+        await repo.update_document(conn, document_id, title=body.title, visibility=body.visibility)
+        doc = await repo.get_document(conn, ctx.org_id, document_id)
+        if doc is None:  # e.g. made restricted by someone who keeps no access
+            raise _not_found()
+        return await _document_out(conn, doc)
+
+
+# ---------------------------------------------------------------- sharing
+
+
+@router.get("/documents/{document_id}/permissions")
+async def list_document_permissions(
+    document_id: UUID, ctx: Org, db: DB
+) -> list[DocumentPermissionOut]:
+    async with db.transaction() as conn:
+        await _require_write(conn, ctx, document_id)
+        rows = await repo.list_permissions(conn, ctx.org_id, document_id)
+    return [DocumentPermissionOut(**r) for r in rows]
+
+
+@router.put("/documents/{document_id}/permissions/{user_id}")
+async def grant_document_permission(
+    document_id: UUID, user_id: UUID, body: PermissionGrant, ctx: Org, db: DB
+) -> DocumentPermissionOut:
+    """Share a document with an active member of this organization (write access)."""
+    async with db.transaction() as conn:
+        doc = await _require_write(conn, ctx, document_id)
+        if doc["status"] == "deleting":
+            raise HTTPException(status.HTTP_409_CONFLICT, detail="document is being deleted")
+        member = await tenants_repo.active_membership(conn, ctx.org_id, user_id)
+        if member is None:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, detail="member not found")
+        if user_id == doc["owner_id"]:
+            raise HTTPException(
+                status.HTTP_422_UNPROCESSABLE_CONTENT,
+                detail="the document owner already has full access",
+            )
+        if body.permission == "write" and member["role"] == "viewer":
+            raise HTTPException(
+                status.HTTP_422_UNPROCESSABLE_CONTENT,
+                detail="viewers can only be given read access",
+            )
+        await repo.upsert_permission(
+            conn,
+            org_id=ctx.org_id,
+            document_id=document_id,
+            user_id=user_id,
+            permission=body.permission,
+            granted_by=ctx.user.user_id,
+        )
+        rows = await repo.list_permissions(conn, ctx.org_id, document_id)
+    return next(DocumentPermissionOut(**r) for r in rows if r["user_id"] == user_id)
+
+
+@router.delete(
+    "/documents/{document_id}/permissions/{user_id}", status_code=status.HTTP_204_NO_CONTENT
+)
+async def revoke_document_permission(
+    document_id: UUID, user_id: UUID, ctx: Org, db: DB
+) -> Response:
+    """Revoke takes effect on the next question; stored answers that used the
+    document are redacted for that user when read."""
+    async with db.transaction() as conn:
+        await _require_write(conn, ctx, document_id)
+        if not await repo.delete_permission(conn, ctx.org_id, document_id, user_id):
+            raise HTTPException(status.HTTP_404_NOT_FOUND, detail="permission not found")
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/documents/{document_id}/versions", status_code=status.HTTP_202_ACCEPTED)

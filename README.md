@@ -22,6 +22,8 @@ until the Cloud Run deployment in [docs/deployment.md](docs/deployment.md) is do
   queries, rechecks every chunk against Postgres permissions, resolves version
   conflicts (explicit supersedes, exceptions, effective dates), verifies
   citations and abstains when evidence is weak.
+- **Document sharing**: rename, change visibility, and share restricted
+  documents with members (read or write); applies to the next question.
 - **Follow-up questions**: a follow-up ("And when do they expire?") is rewritten
   into a standalone question from the conversation before searching.
 - **Hardening**: trigger-written audit logs, quotas and rate limits, revocation

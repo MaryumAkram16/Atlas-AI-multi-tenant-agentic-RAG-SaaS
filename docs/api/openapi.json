@@ -644,6 +644,21 @@
       },
       "DocumentDetail": {
         "properties": {
+          "access": {
+            "anyOf": [
+              {
+                "enum": [
+                  "read",
+                  "write"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Access"
+          },
           "created_at": {
             "format": "date-time",
             "title": "Created At",
@@ -719,6 +734,21 @@
       },
       "DocumentOut": {
         "properties": {
+          "access": {
+            "anyOf": [
+              {
+                "enum": [
+                  "read",
+                  "write"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Access"
+          },
           "created_at": {
             "format": "date-time",
             "title": "Created At",
@@ -782,6 +812,97 @@
           "updated_at"
         ],
         "title": "DocumentOut",
+        "type": "object"
+      },
+      "DocumentPermissionOut": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "granted_by": {
+            "format": "uuid",
+            "title": "Granted By",
+            "type": "string"
+          },
+          "member_status": {
+            "title": "Member Status",
+            "type": "string"
+          },
+          "permission": {
+            "enum": [
+              "read",
+              "write"
+            ],
+            "title": "Permission",
+            "type": "string"
+          },
+          "role": {
+            "title": "Role",
+            "type": "string"
+          },
+          "user_id": {
+            "format": "uuid",
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id",
+          "email",
+          "role",
+          "member_status",
+          "permission",
+          "granted_by",
+          "created_at"
+        ],
+        "title": "DocumentPermissionOut",
+        "type": "object"
+      },
+      "DocumentUpdate": {
+        "properties": {
+          "title": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "visibility": {
+            "anyOf": [
+              {
+                "enum": [
+                  "organization",
+                  "restricted"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Visibility"
+          }
+        },
+        "title": "DocumentUpdate",
         "type": "object"
       },
       "DownloadUrl": {
@@ -1423,6 +1544,23 @@
           "created_at"
         ],
         "title": "OrganizationOut",
+        "type": "object"
+      },
+      "PermissionGrant": {
+        "properties": {
+          "permission": {
+            "enum": [
+              "read",
+              "write"
+            ],
+            "title": "Permission",
+            "type": "string"
+          }
+        },
+        "required": [
+          "permission"
+        ],
+        "title": "PermissionGrant",
         "type": "object"
       },
       "ReadyResponse": {
@@ -2557,6 +2695,73 @@
         "tags": [
           "documents"
         ]
+      },
+      "patch": {
+        "description": "Rename a document or change its visibility (write access).\n\nVisibility takes effect at once: retrieval asks Postgres for the readable\ndocument IDs on every question, so nothing in Qdrant needs to change.",
+        "operationId": "update_document_v1_organizations__org_id__documents__document_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "document_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Document Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Org Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DocumentUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Update Document",
+        "tags": [
+          "documents"
+        ]
       }
     },
     "/v1/organizations/{org_id}/documents/{document_id}/chunks/{chunk_id}": {
@@ -2623,6 +2828,207 @@
           }
         ],
         "summary": "Chunk Preview",
+        "tags": [
+          "documents"
+        ]
+      }
+    },
+    "/v1/organizations/{org_id}/documents/{document_id}/permissions": {
+      "get": {
+        "operationId": "list_document_permissions_v1_organizations__org_id__documents__document_id__permissions_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "document_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Document Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Org Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/DocumentPermissionOut"
+                  },
+                  "title": "Response List Document Permissions V1 Organizations  Org Id  Documents  Document Id  Permissions Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Document Permissions",
+        "tags": [
+          "documents"
+        ]
+      }
+    },
+    "/v1/organizations/{org_id}/documents/{document_id}/permissions/{user_id}": {
+      "delete": {
+        "description": "Revoke takes effect on the next question; stored answers that used the\ndocument are redacted for that user when read.",
+        "operationId": "revoke_document_permission_v1_organizations__org_id__documents__document_id__permissions__user_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "document_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Document Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "User Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Org Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Revoke Document Permission",
+        "tags": [
+          "documents"
+        ]
+      },
+      "put": {
+        "description": "Share a document with an active member of this organization (write access).",
+        "operationId": "grant_document_permission_v1_organizations__org_id__documents__document_id__permissions__user_id__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "document_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Document Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "User Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Org Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PermissionGrant"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentPermissionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Grant Document Permission",
         "tags": [
           "documents"
         ]

@@ -1,7 +1,8 @@
-import { Fragment, useCallback, useEffect, useRef, useState, type FormEvent } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { useOutletContext } from "react-router-dom";
 import { Badge, EmptyState, ErrorBanner, STATUS_TONE, formatDate } from "../components/ui";
 import { useAuth } from "../hooks/useAuth";
+import { SharingPanel } from "../features/documents/SharingPanel";
 import { usePolling } from "../hooks/usePolling";
 import { ApiError, apiRequest } from "../services/api";
 import { can } from "../services/permissions";
@@ -99,7 +100,9 @@ export function KnowledgeBasePage() {
                 {open?.id === d.id && (
                   <tr>
                     <td colSpan={6}>
-                      <DocumentDetail doc={open} canWrite={can.writeDocument(org.role, userId ?? "", d.owner_id)}
+                      <DocumentDetail doc={open} canWrite={can.editDocument(org.role, userId ?? "", open)}
+                        sharing={<SharingPanel doc={open} orgId={org.id} token={token}
+                          onChanged={async () => { await load(); await loadDetail(d.id).catch(() => setOpen(null)); }} />}
                         onVersion={(form) => act(() => apiRequest(`${base}/${d.id}/versions`, token, {
                           method: "POST", body: form }), "New version uploaded. Indexing has started.")}
                         onReindex={() => act(() => apiRequest(`${base}/${d.id}/reindex`, token,
@@ -167,6 +170,7 @@ function UploadForm({ onUpload }: { onUpload: (form: FormData) => Promise<void> 
 function DocumentDetail(props: {
   doc: DocumentItem;
   canWrite: boolean;
+  sharing: ReactNode;
   onVersion: (form: FormData) => Promise<void>;
   onReindex: () => void;
   onDelete: () => void;
@@ -208,6 +212,7 @@ function DocumentDetail(props: {
           <button className="btn btn-danger" onClick={props.onDelete}>Delete</button>
         </div>
       )}
+      {canWrite && doc.status !== "deleting" && props.sharing}
     </div>
   );
 }

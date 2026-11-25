@@ -5,7 +5,8 @@ import { fileURLToPath } from "node:url";
 /**
  * The Week 5 acceptance flow, entirely through the UI:
  * a new user signs up, creates an organization, invites a member, uploads a
- * document, and the member chats and gets an answer with citations.
+ * document, restricts it and shares it with the member, and the member chats
+ * and gets an answer with citations.
  */
 
 const run = Date.now().toString(36);
@@ -60,8 +61,18 @@ test("new user: sign up, create org, invite, upload, chat with citations", async
   await ownerPage.getByRole("link", { name: "Knowledge base" }).click();
   await ownerPage.getByLabel("Document file").setInputFiles(policy);
   await ownerPage.getByRole("button", { name: "Upload" }).click();
-  const row = ownerPage.getByLabel("Documents").locator("tr", { hasText: "refund-policy-2026" });
+  const row = ownerPage.getByLabel("Documents").locator("tr.clickable", { hasText: "refund-policy-2026" });
   await expect(row).toContainText("ready", { timeout: 90_000 });
+
+  // Owner restricts the document, then shares it with the member (read only).
+  await row.click();
+  ownerPage.once("dialog", (d) => void d.accept());
+  await ownerPage.getByLabel("Document visibility").selectOption("restricted");
+  await expect(row).toContainText("restricted");
+  await ownerPage.getByLabel("Member to share with").selectOption({ label: `${invitee.email} (member)` });
+  await ownerPage.getByLabel("Access level").selectOption("read");
+  await ownerPage.getByRole("button", { name: "Share" }).click();
+  await expect(ownerPage.getByLabel("Document permissions")).toContainText(invitee.email);
 
   // 5. The member asks a question and gets a cited answer.
   await memberPage.getByLabel("Question").fill("How many days do customers have to request a refund?");

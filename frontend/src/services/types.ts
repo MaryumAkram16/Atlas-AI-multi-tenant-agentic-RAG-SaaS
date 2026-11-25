@@ -59,8 +59,22 @@ export interface DocumentItem {
   status: "processing" | "ready" | "failed" | "deleting";
   created_at: string;
   updated_at: string;
+  /** The caller's own access, decided by Postgres. */
+  access?: DocumentAccess | null;
   current_version: Version | null;
   versions?: Version[];
+}
+
+export type DocumentAccess = "read" | "write";
+
+export interface DocumentPermission {
+  user_id: string;
+  email: string | null;
+  role: Role;
+  member_status: "active" | "revoked";
+  permission: DocumentAccess;
+  granted_by: string;
+  created_at: string;
 }
 
 export interface Job {

@@ -161,5 +161,7 @@ API tests: `backend/tests/security/test_api_isolation.py` and
 - Invitation acceptance trusts the JWT `email` claim; require email
   confirmation in Supabase Auth settings.
 - No ownership transfer, org deletion endpoint or audit log yet (Week 6).
-- No endpoints to grant document permissions yet (schema and policies exist).
+- Anyone with write access to a document can share it further and change its
+  visibility (ADR 0011). Organization owners do not see restricted documents
+  unless shared; there is no break-glass access.
 - Rate-limit windows are fixed (bursts at window edges can reach twice the limit).

@@ -35,7 +35,7 @@ async def get_document(conn: AsyncConnection, org_id: UUID, document_id: UUID) -
         conn,
         """
         SELECT id, organization_id, owner_id, title, visibility, status, created_at,
-               updated_at, current_version_id
+               updated_at, current_version_id, app_private.document_access(id) AS access
         FROM documents
         WHERE organization_id = %s AND id = %s
         """,
@@ -48,7 +48,7 @@ async def list_documents(conn: AsyncConnection, org_id: UUID) -> list[Row]:
         conn,
         """
         SELECT id, organization_id, owner_id, title, visibility, status, created_at,
-               updated_at, current_version_id
+               updated_at, current_version_id, app_private.document_access(id) AS access
         FROM documents
         WHERE organization_id = %s
         ORDER BY created_at DESC, id
@@ -73,6 +73,72 @@ async def insert_document(
         """,
         (document_id, org_id, owner_id, title, visibility),
     )
+
+
+async def update_document(
+    conn: AsyncConnection, document_id: UUID, *, title: str | None, visibility: str | None
+) -> None:
+    """Only title and visibility are updatable (column grant + RLS write access)."""
+    await conn.execute(
+        """
+        UPDATE documents
+        SET title = COALESCE(%s, title), visibility = COALESCE(%s, visibility)
+        WHERE id = %s
+        """,
+        (title, visibility, document_id),
+    )
+
+
+# ---------- permissions ----------
+
+
+async def list_permissions(conn: AsyncConnection, org_id: UUID, document_id: UUID) -> list[Row]:
+    return await _all(
+        conn,
+        """
+        SELECT p.user_id, m.email, m.role, m.status AS member_status, p.permission,
+               p.granted_by, p.created_at
+        FROM document_permissions p
+        JOIN organization_members m
+          ON m.organization_id = p.organization_id AND m.user_id = p.user_id
+        WHERE p.organization_id = %s AND p.document_id = %s
+        ORDER BY p.created_at, p.user_id
+        """,
+        (org_id, document_id),
+    )
+
+
+async def upsert_permission(
+    conn: AsyncConnection,
+    *,
+    org_id: UUID,
+    document_id: UUID,
+    user_id: UUID,
+    permission: str,
+    granted_by: UUID,
+) -> None:
+    await conn.execute(
+        """
+        INSERT INTO document_permissions
+          (organization_id, document_id, user_id, permission, granted_by)
+        VALUES (%s, %s, %s, %s, %s)
+        ON CONFLICT (document_id, user_id) DO UPDATE SET permission = EXCLUDED.permission
+        """,
+        (org_id, document_id, user_id, permission, granted_by),
+    )
+
+
+async def delete_permission(
+    conn: AsyncConnection, org_id: UUID, document_id: UUID, user_id: UUID
+) -> bool:
+    cur = await conn.execute(
+        """
+        DELETE FROM document_permissions
+        WHERE organization_id = %s AND document_id = %s AND user_id = %s
+        """,
+        (org_id, document_id, user_id),
+    )
+    return cur.rowcount > 0
 
 
 async def mark_deleting(conn: AsyncConnection, document_id: UUID) -> bool:

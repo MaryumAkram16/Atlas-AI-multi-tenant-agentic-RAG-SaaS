@@ -27,7 +27,11 @@ Errors always have the shape
 | POST | `/v1/organizations/{org_id}/documents` | Upload Document | member |
 | GET | `/v1/organizations/{org_id}/documents` | List Documents | member |
 | GET | `/v1/organizations/{org_id}/documents/{document_id}` | Get Document | member |
+| PATCH | `/v1/organizations/{org_id}/documents/{document_id}` | Rename a document or change its visibility (write access). | member |
 | DELETE | `/v1/organizations/{org_id}/documents/{document_id}` | Delete Document | member |
+| GET | `/v1/organizations/{org_id}/documents/{document_id}/permissions` | List Document Permissions | member |
+| PUT | `/v1/organizations/{org_id}/documents/{document_id}/permissions/{user_id}` | Share a document with an active member of this organization (write access). | member |
+| DELETE | `/v1/organizations/{org_id}/documents/{document_id}/permissions/{user_id}` | Revoke takes effect on the next question; stored answers that used the | member |
 | POST | `/v1/organizations/{org_id}/documents/{document_id}/versions` | Upload Version | member |
 | POST | `/v1/organizations/{org_id}/documents/{document_id}/reindex` | Reindex Document | member |
 | GET | `/v1/organizations/{org_id}/documents/{document_id}/versions/{version_id}/download-url` | Download Url | member |

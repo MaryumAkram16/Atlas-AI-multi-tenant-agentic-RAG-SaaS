@@ -138,3 +138,5 @@ input:focus, select:focus, textarea:focus, button:focus-visible {
   .main { padding: 1rem; }
   .table { display: block; overflow-x: auto; }
 }
+.sharing { display: flex; flex-direction: column; gap: 0.5rem; }
+.sharing h4 { margin: 0.25rem 0 0; font-size: 0.9rem; }

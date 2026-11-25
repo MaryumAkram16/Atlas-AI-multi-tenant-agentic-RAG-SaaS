@@ -2,9 +2,10 @@ from datetime import date, datetime
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, model_validator
 
 Visibility = Literal["organization", "restricted"]
+Permission = Literal["read", "write"]
 
 
 class VersionOut(BaseModel):
@@ -32,6 +33,8 @@ class DocumentOut(BaseModel):
     status: str
     created_at: datetime
     updated_at: datetime
+    # The caller's own access ("read" or "write"), decided by Postgres.
+    access: Permission | None = None
     current_version: VersionOut | None = None
 
 
@@ -77,3 +80,32 @@ class ChunkPreview(BaseModel):
 class DownloadUrl(BaseModel):
     url: str
     expires_in: int
+
+
+class DocumentUpdate(BaseModel):
+    title: str | None = Field(default=None, min_length=1, max_length=300)
+    visibility: Visibility | None = None
+
+    @model_validator(mode="after")
+    def _not_empty(self):
+        if self.title is None and self.visibility is None:
+            raise ValueError("nothing to update")
+        if self.title is not None:
+            self.title = self.title.strip()
+            if not self.title:
+                raise ValueError("title cannot be blank")
+        return self
+
+
+class PermissionGrant(BaseModel):
+    permission: Permission
+
+
+class DocumentPermissionOut(BaseModel):
+    user_id: UUID
+    email: str | None
+    role: str
+    member_status: str
+    permission: Permission
+    granted_by: UUID
+    created_at: datetime
