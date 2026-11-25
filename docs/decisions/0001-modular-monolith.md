@@ -16,7 +16,7 @@ and embedding are slow, bursty and must not block API requests.
 ## Decision
 - One FastAPI codebase (`backend/app`) organised by domain package
   (`tenants`, `documents`, `ingestion`, `retrieval`, `agents`, ...).
-- Two processes from the same image: the **API** (`uvicorn app.main:app`) and
+- Two processes from the same image: the **API** (`uvicorn app.main:create_app --factory`) and
   the **worker** (`python -m app.workers.main`).
 - Domains talk through in-process service interfaces, not HTTP. Data access goes
   through `repositories`, so the boundary between domains stays visible.

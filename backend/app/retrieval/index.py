@@ -30,6 +30,7 @@ def _tenant_filter(
     organization_id: UUID | str,
     document_ids: Sequence[UUID | str] | None = None,
     version_id: UUID | str | None = None,
+    version_ids: Sequence[UUID | str] | None = None,
 ) -> models.Filter:
     must: list[models.Condition] = [
         models.FieldCondition(
@@ -46,6 +47,12 @@ def _tenant_filter(
         must.append(
             models.FieldCondition(key="version_id", match=models.MatchValue(value=str(version_id)))
         )
+    if version_ids is not None:
+        must.append(
+            models.FieldCondition(
+                key="version_id", match=models.MatchAny(any=[str(v) for v in version_ids])
+            )
+        )
     return models.Filter(must=must)
 
 
@@ -61,6 +68,8 @@ class VectorIndex:
             url=settings.qdrant_url,
             api_key=settings.qdrant_api_key.get_secret_value() if settings.qdrant_api_key else None,
             timeout=30,
+            # Don't contact the server at construction; /ready reports reachability.
+            check_compatibility=False,
         )
         return cls(client, settings.qdrant_collection, settings.embedding_dimensions)
 
@@ -159,8 +168,9 @@ class VectorIndex:
         organization_id: UUID | str,
         document_ids: Sequence[UUID | str],
         limit: int,
+        version_ids: Sequence[UUID | str] | None = None,
     ) -> list[models.ScoredPoint]:
-        return self._query(DENSE, vector, organization_id, document_ids, limit)
+        return self._query(DENSE, vector, organization_id, document_ids, version_ids, limit)
 
     def search_sparse(
         self,
@@ -169,18 +179,20 @@ class VectorIndex:
         organization_id: UUID | str,
         document_ids: Sequence[UUID | str],
         limit: int,
+        version_ids: Sequence[UUID | str] | None = None,
     ) -> list[models.ScoredPoint]:
         query = models.SparseVector(indices=vector.indices, values=vector.values)
-        return self._query(SPARSE, query, organization_id, document_ids, limit)
+        return self._query(SPARSE, query, organization_id, document_ids, version_ids, limit)
 
-    def _query(self, using, query, organization_id, document_ids, limit):
+    def _query(self, using, query, organization_id, document_ids, version_ids, limit):
         if not document_ids:
             return []
+        flt = _tenant_filter(organization_id, document_ids, version_ids=version_ids)
         return self._client.query_points(
             self.collection,
             query=query,
             using=using,
-            query_filter=_tenant_filter(organization_id, document_ids),
+            query_filter=flt,
             limit=limit,
             with_payload=True,
         ).points

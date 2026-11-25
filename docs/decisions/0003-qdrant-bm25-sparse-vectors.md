@@ -1,6 +1,6 @@
 # 0003. Qdrant BM25 sparse vectors for keyword search
 
-- Status: Accepted
+- Status: Accepted (fusion moved client-side, see ADR 0006)
 - Date: 2026-11-25
 
 ## Context

@@ -73,6 +73,26 @@ Files: stored under `<org>/<document>/<version>/` (DB CHECK constraint), served
 only through signed URLs that expire in at most 300 seconds, issued after the
 API checks access. Qdrant payloads contain IDs only.
 
+## Chat (Week 3)
+
+Order of checks for `POST /chat` ([ADR 0006](../decisions/0006-baseline-rag.md)):
+
+1. JWT + active membership (as everywhere).
+2. Conversation must belong to the caller (RLS); requested `document_ids` must
+   all be readable, ready documents, else 404.
+3. Qdrant queries filter by `organization_id` + allowed document IDs + their
+   current version IDs.
+4. Candidate chunk IDs are rechecked under RLS and must belong to an allowed,
+   ready document's current published version. Text is loaded only here.
+5. Only those chunks reach the model, wrapped as untrusted `<source>` data.
+
+| Table | SELECT | INSERT | UPDATE | DELETE |
+|---|---|---|---|---|
+| `conversations` | own, while a member | own, while a member | own (`title`) | own |
+| `messages` | in own conversation | in own conversation | denied | denied |
+| `message_citations` | own message AND document readable now | same | denied | denied |
+| `usage_events` | own; owners/admins see the org | own | denied | denied |
+
 ## Evidence
 
 | Requirement | Tests |
@@ -89,10 +109,14 @@ API checks access. Qdrant payloads contain IDs only.
 | Restricted documents hidden in every table | `test_restricted_document_hidden_even_from_owner_and_admin`, `test_restricted_document_rows_hidden_in_every_table` |
 | Worker confined to one tenant per job | `test_worker_role_is_pinned_to_the_job_tenant`, `test_worker_cannot_delete_documents_not_marked_for_deletion`, `test_claims_cannot_be_used_by_worker_role` |
 | Signed URLs only after authorization | `test_signed_download_url_only_after_authorization` |
+| A private document never reaches an unauthorized member's answer or the model | `test_private_document_never_reaches_unauthorized_members` |
+| Recheck drops stale index entries (superseded, deleting, out of scope, forbidden) | `test_recheck_rejects_stale_index_entries_directly`, `test_recheck_filters_chunks_even_if_upstream_lets_them_through` |
+| Conversations private; revoked members lose history | `test_conversations_are_private`, `test_revoked_member_cannot_chat_or_read_history` |
 
 API tests: `backend/tests/security/test_api_isolation.py` and
 `test_document_isolation.py`. Direct DB tests as the restricted roles:
-`test_rls_direct.py` and the DB tests in `test_document_isolation.py`.
+`test_rls_direct.py` and the DB tests in `test_document_isolation.py`. Chat:
+`test_chat_isolation.py`.
 
 ## Known limits
 
@@ -101,4 +125,5 @@ API tests: `backend/tests/security/test_api_isolation.py` and
   confirmation in Supabase Auth settings.
 - No ownership transfer, org deletion endpoint or audit log yet (Week 6).
 - No endpoints to grant document permissions yet (schema and policies exist).
-- Revocation does not yet revalidate stored conversations or cached evidence (Week 6).
+- Revocation hides stored citations immediately, but stored answer text is not
+  yet revalidated (Week 6).

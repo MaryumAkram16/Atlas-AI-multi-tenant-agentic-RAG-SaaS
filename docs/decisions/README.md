@@ -10,3 +10,4 @@ sequentially, and add it to the index below.
 | [0003](0003-qdrant-bm25-sparse-vectors.md) | Qdrant BM25 sparse vectors for keyword search | Accepted |
 | [0004](0004-tenant-isolation-model.md) | Tenant isolation: restricted role, JWT claims and RLS | Accepted |
 | [0005](0005-ingestion-pipeline.md) | Ingestion pipeline, worker role and document ACLs | Accepted |
+| [0006](0006-baseline-rag.md) | Baseline RAG: retrieval, recheck, generation and citations | Accepted |

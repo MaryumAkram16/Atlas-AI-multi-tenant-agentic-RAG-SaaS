@@ -8,7 +8,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    # Empty variables in .env (e.g. `QDRANT_API_KEY=`) mean "not set".
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore", env_ignore_empty=True)
 
     app_name: str = "atlas-ai"
     app_env: str = "local"
@@ -57,6 +58,21 @@ class Settings(BaseSettings):
     embedding_dimensions: int = Field(default=1536, ge=8)
     openai_api_key: SecretStr | None = None
     openai_base_url: str = "https://api.openai.com/v1"
+
+    # Retrieval and answering
+    retrieval_dense_k: int = Field(default=20, ge=1, le=100)
+    retrieval_sparse_k: int = Field(default=20, ge=1, le=100)
+    retrieval_fused_k: int = Field(default=20, ge=1, le=100)
+    rrf_k: int = Field(default=60, ge=1)
+    answer_max_chunks: int = Field(default=8, ge=1, le=20)
+    chat_history_messages: int = Field(default=6, ge=0, le=20)
+    llm_provider: Literal["openai", "extractive"] = "openai"
+    llm_model: str = "gpt-4o-mini"
+    llm_max_tokens: int = Field(default=800, ge=16)
+    llm_timeout_seconds: float = Field(default=60, gt=0)
+    # Optional prices (USD per 1M tokens) for usage cost estimates; unset = no estimate.
+    llm_input_price_per_1m: float | None = Field(default=None, ge=0)
+    llm_output_price_per_1m: float | None = Field(default=None, ge=0)
 
     # Job queue
     job_max_attempts: int = Field(default=5, ge=1, le=20)

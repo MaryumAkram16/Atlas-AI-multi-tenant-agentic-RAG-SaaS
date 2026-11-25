@@ -1,0 +1,806 @@
+{
+  "generated_at": "2026-11-25T19:52:34+00:00",
+  "dataset": "evaluations/datasets/hr_refund_v1.jsonl",
+  "corpus": "sample-data/acme",
+  "questions_total": 30,
+  "questions_scored": 26,
+  "corpus_chunks": 38,
+  "config": {
+    "embedding_provider": "hash",
+    "embedding_model": "feature-hashing (offline)",
+    "embedding_dimensions": 1536,
+    "tokenizer": "simple",
+    "chunk_tokens": 512,
+    "chunk_overlap_tokens": 64,
+    "dense_k": 20,
+    "sparse_k": 20,
+    "fused_k": 20,
+    "rrf_k": 60
+  },
+  "overall": {
+    "dense": {
+      "n": 26,
+      "recall@5": 1.0,
+      "mrr": 0.8794871794871795,
+      "ndcg@10": 0.9052269648851852,
+      "latency_p50_ms": 2.3209035000490985,
+      "latency_p95_ms": 2.8685414999642944
+    },
+    "sparse": {
+      "n": 26,
+      "recall@5": 0.967948717948718,
+      "mrr": 0.8397435897435896,
+      "ndcg@10": 0.8675066649040671,
+      "latency_p50_ms": 1.7287745000089672,
+      "latency_p95_ms": 2.3146367500430642
+    },
+    "hybrid": {
+      "n": 26,
+      "recall@5": 1.0,
+      "mrr": 0.907051282051282,
+      "ndcg@10": 0.9237800880730453,
+      "latency_p50_ms": 3.976901500038821,
+      "latency_p95_ms": 4.2154452499403305
+    }
+  },
+  "by_category": {
+    "dense": {
+      "conflicting_versions": {
+        "n": 6,
+        "recall@5": 1.0,
+        "mrr": 0.8055555555555555,
+        "ndcg@10": 0.8551549589285763,
+        "latency_p50_ms": 2.518013499980043,
+        "latency_p95_ms": 3.2835284999919168
+      },
+      "direct": {
+        "n": 12,
+        "recall@5": 1.0,
+        "mrr": 0.9027777777777778,
+        "ndcg@10": 0.9275774794642881,
+        "latency_p50_ms": 2.2901374999833024,
+        "latency_p95_ms": 2.589064399990093
+      },
+      "exact_policy_id": {
+        "n": 5,
+        "recall@5": 1.0,
+        "mrr": 0.8400000000000001,
+        "ndcg@10": 0.8773705614469083,
+        "latency_p50_ms": 2.310828000076981,
+        "latency_p95_ms": 2.4369703999809644
+      },
+      "multi_doc": {
+        "n": 2,
+        "recall@5": 1.0,
+        "mrr": 1.0,
+        "ndcg@10": 0.9435943863186784,
+        "latency_p50_ms": 2.550721999966754,
+        "latency_p95_ms": 2.8480153999510094
+      },
+      "outdated": {
+        "n": 1,
+        "recall@5": 1.0,
+        "mrr": 1.0,
+        "ndcg@10": 1.0,
+        "latency_p50_ms": 2.268563999905382,
+        "latency_p95_ms": 2.268563999905382
+      }
+    },
+    "sparse": {
+      "conflicting_versions": {
+        "n": 6,
+        "recall@5": 1.0,
+        "mrr": 0.638888888888889,
+        "ndcg@10": 0.7321315434523954,
+        "latency_p50_ms": 1.8470315000627124,
+        "latency_p95_ms": 1.9441272500557716
+      },
+      "direct": {
+        "n": 12,
+        "recall@5": 1.0,
+        "mrr": 1.0,
+        "ndcg@10": 1.0,
+        "latency_p50_ms": 1.677411499997561,
+        "latency_p95_ms": 2.1594309000022345
+      },
+      "exact_policy_id": {
+        "n": 5,
+        "recall@5": 1.0,
+        "mrr": 0.6,
+        "ndcg@10": 0.6984565739436487,
+        "latency_p50_ms": 1.833626000006916,
+        "latency_p95_ms": 2.0631443999718613
+      },
+      "multi_doc": {
+        "n": 2,
+        "recall@5": 0.5833333333333333,
+        "mrr": 1.0,
+        "ndcg@10": 0.8350505785365644,
+        "latency_p50_ms": 1.987359500049024,
+        "latency_p95_ms": 2.343256850065245
+      },
+      "outdated": {
+        "n": 1,
+        "recall@5": 1.0,
+        "mrr": 1.0,
+        "ndcg@10": 1.0,
+        "latency_p50_ms": 1.7001639999989493,
+        "latency_p95_ms": 1.7001639999989493
+      }
+    },
+    "hybrid": {
+      "conflicting_versions": {
+        "n": 6,
+        "recall@5": 1.0,
+        "mrr": 0.8055555555555555,
+        "ndcg@10": 0.8551549589285763,
+        "latency_p50_ms": 3.8682479999465613,
+        "latency_p95_ms": 4.303172499930952
+      },
+      "direct": {
+        "n": 12,
+        "recall@5": 1.0,
+        "mrr": 0.9583333333333334,
+        "ndcg@10": 0.9692441461309548,
+        "latency_p50_ms": 4.103450499997052,
+        "latency_p95_ms": 4.214805949948186
+      },
+      "exact_policy_id": {
+        "n": 5,
+        "recall@5": 1.0,
+        "mrr": 0.85,
+        "ndcg@10": 0.8861353116146786,
+        "latency_p50_ms": 3.9822270000513527,
+        "latency_p95_ms": 4.142208799930813
+      },
+      "multi_doc": {
+        "n": 2,
+        "recall@5": 1.0,
+        "mrr": 1.0,
+        "ndcg@10": 0.9128731123414349,
+        "latency_p50_ms": 3.9647060000334022,
+        "latency_p95_ms": 3.9708890000270003
+      },
+      "outdated": {
+        "n": 1,
+        "recall@5": 1.0,
+        "mrr": 1.0,
+        "ndcg@10": 1.0,
+        "latency_p50_ms": 4.010432999962177,
+        "latency_p95_ms": 4.010432999962177
+      }
+    }
+  },
+  "per_question": {
+    "dense": [
+      {
+        "id": "q01",
+        "category": "conflicting_versions",
+        "recall@5": 1.0,
+        "mrr": 0.3333333333333333,
+        "ndcg@10": 0.5,
+        "latency_ms": 3.4343639999860898
+      },
+      {
+        "id": "q02",
+        "category": "multi_doc",
+        "recall@5": 1.0,
+        "mrr": 1.0,
+        "ndcg@10": 0.9197207891481876,
+        "latency_ms": 2.88104799994926
+      },
+      {
+        "id": "q03",
+        "category": "exact_policy_id",
+        "recall@5": 1.0,
+        "mrr": 0.2,
+        "ndcg@10": 0.38685280723454163,
+        "latency_ms": 2.4236880000216843
+      },
+      {
+        "id": "q04",
+        "category": "exact_policy_id",
+        "recall@5": 1.0,
+        "mrr": 1.0,
+        "ndcg@10": 1.0,
+        "latency_ms": 2.310828000076981
+      },
+      {
+        "id": "q05",
+        "category": "direct",
+        "recall@5": 1.0,
+        "mrr": 1.0,
+        "ndcg@10": 1.0,
+        "latency_ms": 2.2709940000140705
+      },
+      {
+        "id": "q06",
+        "category": "direct",
+        "recall@5": 1.0,
+        "mrr": 1.0,
+        "ndcg@10": 1.0,
+        "latency_ms": 2.234057999999095
+      },
+      {
+        "id": "q07",
+        "category": "outdated",
+        "recall@5": 1.0,
+        "mrr": 1.0,
+        "ndcg@10": 1.0,
+        "latency_ms": 2.268563999905382
+      },
+      {
+        "id": "q08",
+        "category": "conflicting_versions",
+        "recall@5": 1.0,
+        "mrr": 0.5,
+        "ndcg@10": 0.6309297535714575,
+        "latency_ms": 2.3442809999778547
+      },
+      {
+        "id": "q09",
+        "category": "conflicting_versions",
+        "recall@5": 1.0,
+        "mrr": 1.0,
+        "ndcg@10": 1.0,
+        "latency_ms": 2.5737980000712923
+      },
+      {
+        "id": "q10",
+        "category": "conflicting_versions",
+        "recall@5": 1.0,
+        "mrr": 1.0,
+        "ndcg@10": 1.0,
+        "latency_ms": 2.8310220000093977
+      },
+      {
+        "id": "q11",
+        "category": "direct",
+        "recall@5": 1.0,
+        "mrr": 1.0,
+        "ndcg@10": 1.0,
+        "latency_ms": 2.608056999974906
+      },
+      {
+        "id": "q12",
+        "category": "conflicting_versions",
+        "recall@5": 1.0,
+        "mrr": 1.0,
+        "ndcg@10": 1.0,
+        "latency_ms": 2.1276209999996354
+      },
+      {
+        "id": "q13",
+        "category": "exact_policy_id",
+        "recall@5": 1.0,
+        "mrr": 1.0,
+        "ndcg@10": 1.0,
+        "latency_ms": 2.4402909999707845
+      },
+      {
+        "id": "q14",
+        "category": "direct",
+        "recall@5": 1.0,
+        "mrr": 0.3333333333333333,
+        "ndcg@10": 0.5,
+        "latency_ms": 2.3092809999525343
+      },
+      {
+        "id": "q15",
+        "category": "direct",
+        "recall@5": 1.0,
+        "mrr": 1.0,
+        "ndcg@10": 1.0,
+        "latency_ms": 2.202457999942453
+      },
+      {
+        "id": "q16",
+        "category": "direct",
+        "recall@5": 1.0,
+        "mrr": 1.0,
+        "ndcg@10": 1.0,
+        "latency_ms": 2.526442000089446
+      },
+      {
+        "id": "q17",
+        "category": "exact_policy_id",
+        "recall@5": 1.0,
+        "mrr": 1.0,
+        "ndcg@10": 1.0,
+        "latency_ms": 2.1854329999086985
+      },
+      {
+        "id": "q18",
+        "category": "direct",
+        "recall@5": 1.0,
+        "mrr": 1.0,
+        "ndcg@10": 1.0,
+        "latency_ms": 2.2679869999819857
+      },
+      {
+        "id": "q19",
+        "category": "direct",
+        "recall@5": 1.0,
+        "mrr": 1.0,
+        "ndcg@10": 1.0,
+        "latency_ms": 2.2653050000371877
+      },
+      {
+        "id": "q20",
+        "category": "direct",
+        "recall@5": 1.0,
+        "mrr": 1.0,
+        "ndcg@10": 1.0,
+        "latency_ms": 2.330979000021216
+      },
+      {
+        "id": "q21",
+        "category": "direct",
+        "recall@5": 1.0,
+        "mrr": 1.0,
+        "ndcg@10": 1.0,
+        "latency_ms": 2.5112090000902754
+      },
+      {
+        "id": "q22",
+        "category": "direct",
+        "recall@5": 1.0,
+        "mrr": 1.0,
+        "ndcg@10": 1.0,
+        "latency_ms": 2.573525000002519
+      },
+      {
+        "id": "q23",
+        "category": "exact_policy_id",
+        "recall@5": 1.0,
+        "mrr": 1.0,
+        "ndcg@10": 1.0,
+        "latency_ms": 2.239991999999802
+      },
+      {
+        "id": "q24",
+        "category": "direct",
+        "recall@5": 1.0,
+        "mrr": 0.5,
+        "ndcg@10": 0.6309297535714575,
+        "latency_ms": 2.063765000002604
+      },
+      {
+        "id": "q25",
+        "category": "conflicting_versions",
+        "recall@5": 1.0,
+        "mrr": 1.0,
+        "ndcg@10": 1.0,
+        "latency_ms": 2.4622289998887936
+      },
+      {
+        "id": "q26",
+        "category": "multi_doc",
+        "recall@5": 1.0,
+        "mrr": 1.0,
+        "ndcg@10": 0.9674679834891693,
+        "latency_ms": 2.220395999984248
+      }
+    ],
+    "sparse": [
+      {
+        "id": "q01",
+        "category": "conflicting_versions",
+        "recall@5": 1.0,
+        "mrr": 0.3333333333333333,
+        "ndcg@10": 0.5,
+        "latency_ms": 1.89970999997513
+      },
+      {
+        "id": "q02",
+        "category": "multi_doc",
+        "recall@5": 0.5,
+        "mrr": 1.0,
+        "ndcg@10": 0.8315546295836225,
+        "latency_ms": 2.3828010000670474
+      },
+      {
+        "id": "q03",
+        "category": "exact_policy_id",
+        "recall@5": 1.0,
+        "mrr": 0.25,
+        "ndcg@10": 0.43067655807339306,
+        "latency_ms": 2.1101439999711147
+      },
+      {
+        "id": "q04",
+        "category": "exact_policy_id",
+        "recall@5": 1.0,
+        "mrr": 0.5,
+        "ndcg@10": 0.6309297535714575,
+        "latency_ms": 1.8751459999748477
+      },
+      {
+        "id": "q05",
+        "category": "direct",
+        "recall@5": 1.0,
+        "mrr": 1.0,
+        "ndcg@10": 1.0,
+        "latency_ms": 1.745500999959404
+      },
+      {
+        "id": "q06",
+        "category": "direct",
+        "recall@5": 1.0,
+        "mrr": 1.0,
+        "ndcg@10": 1.0,
+        "latency_ms": 1.919247000046198
+      },
+      {
+        "id": "q07",
+        "category": "outdated",
+        "recall@5": 1.0,
+        "mrr": 1.0,
+        "ndcg@10": 1.0,
+        "latency_ms": 1.7001639999989493
+      },
+      {
+        "id": "q08",
+        "category": "conflicting_versions",
+        "recall@5": 1.0,
+        "mrr": 0.5,
+        "ndcg@10": 0.6309297535714575,
+        "latency_ms": 1.8952220000301168
+      },
+      {
+        "id": "q09",
+        "category": "conflicting_versions",
+        "recall@5": 1.0,
+        "mrr": 0.5,
+        "ndcg@10": 0.6309297535714575,
+        "latency_ms": 1.7988410000953081
+      },
+      {
+        "id": "q10",
+        "category": "conflicting_versions",
+        "recall@5": 1.0,
+        "mrr": 0.5,
+        "ndcg@10": 0.6309297535714575,
+        "latency_ms": 1.6849810000394427
+      },
+      {
+        "id": "q11",
+        "category": "direct",
+        "recall@5": 1.0,
+        "mrr": 1.0,
+        "ndcg@10": 1.0,
+        "latency_ms": 2.452988999948502
+      },
+      {
+        "id": "q12",
+        "category": "conflicting_versions",
+        "recall@5": 1.0,
+        "mrr": 1.0,
+        "ndcg@10": 1.0,
+        "latency_ms": 1.9589330000826521
+      },
+      {
+        "id": "q13",
+        "category": "exact_policy_id",
+        "recall@5": 1.0,
+        "mrr": 0.25,
+        "ndcg@10": 0.43067655807339306,
+        "latency_ms": 1.7658689999962007
+      },
+      {
+        "id": "q14",
+        "category": "direct",
+        "recall@5": 1.0,
+        "mrr": 1.0,
+        "ndcg@10": 1.0,
+        "latency_ms": 1.6737400000010894
+      },
+      {
+        "id": "q15",
+        "category": "direct",
+        "recall@5": 1.0,
+        "mrr": 1.0,
+        "ndcg@10": 1.0,
+        "latency_ms": 1.5343150000717287
+      },
+      {
+        "id": "q16",
+        "category": "direct",
+        "recall@5": 1.0,
+        "mrr": 1.0,
+        "ndcg@10": 1.0,
+        "latency_ms": 1.6453860000638088
+      },
+      {
+        "id": "q17",
+        "category": "exact_policy_id",
+        "recall@5": 1.0,
+        "mrr": 1.0,
+        "ndcg@10": 1.0,
+        "latency_ms": 1.833626000006916
+      },
+      {
+        "id": "q18",
+        "category": "direct",
+        "recall@5": 1.0,
+        "mrr": 1.0,
+        "ndcg@10": 1.0,
+        "latency_ms": 1.7120480000585303
+      },
+      {
+        "id": "q19",
+        "category": "direct",
+        "recall@5": 1.0,
+        "mrr": 1.0,
+        "ndcg@10": 1.0,
+        "latency_ms": 1.8035169999848222
+      },
+      {
+        "id": "q20",
+        "category": "direct",
+        "recall@5": 1.0,
+        "mrr": 1.0,
+        "ndcg@10": 1.0,
+        "latency_ms": 1.6664429999764252
+      },
+      {
+        "id": "q21",
+        "category": "direct",
+        "recall@5": 1.0,
+        "mrr": 1.0,
+        "ndcg@10": 1.0,
+        "latency_ms": 1.6275909999876603
+      },
+      {
+        "id": "q22",
+        "category": "direct",
+        "recall@5": 1.0,
+        "mrr": 1.0,
+        "ndcg@10": 1.0,
+        "latency_ms": 1.5251300000045376
+      },
+      {
+        "id": "q23",
+        "category": "exact_policy_id",
+        "recall@5": 1.0,
+        "mrr": 1.0,
+        "ndcg@10": 1.0,
+        "latency_ms": 1.632467000035831
+      },
+      {
+        "id": "q24",
+        "category": "direct",
+        "recall@5": 1.0,
+        "mrr": 1.0,
+        "ndcg@10": 1.0,
+        "latency_ms": 1.6810829999940324
+      },
+      {
+        "id": "q25",
+        "category": "conflicting_versions",
+        "recall@5": 1.0,
+        "mrr": 1.0,
+        "ndcg@10": 1.0,
+        "latency_ms": 1.499222000006739
+      },
+      {
+        "id": "q26",
+        "category": "multi_doc",
+        "recall@5": 0.6666666666666666,
+        "mrr": 1.0,
+        "ndcg@10": 0.8385465274895063,
+        "latency_ms": 1.5919180000310007
+      }
+    ],
+    "hybrid": [
+      {
+        "id": "q01",
+        "category": "conflicting_versions",
+        "recall@5": 1.0,
+        "mrr": 0.3333333333333333,
+        "ndcg@10": 0.5,
+        "latency_ms": 4.415490999917893
+      },
+      {
+        "id": "q02",
+        "category": "multi_doc",
+        "recall@5": 1.0,
+        "mrr": 1.0,
+        "ndcg@10": 0.9197207891481876,
+        "latency_ms": 3.971576000026289
+      },
+      {
+        "id": "q03",
+        "category": "exact_policy_id",
+        "recall@5": 1.0,
+        "mrr": 0.25,
+        "ndcg@10": 0.43067655807339306,
+        "latency_ms": 4.007043999990856
+      },
+      {
+        "id": "q04",
+        "category": "exact_policy_id",
+        "recall@5": 1.0,
+        "mrr": 1.0,
+        "ndcg@10": 1.0,
+        "latency_ms": 4.175999999915803
+      },
+      {
+        "id": "q05",
+        "category": "direct",
+        "recall@5": 1.0,
+        "mrr": 1.0,
+        "ndcg@10": 1.0,
+        "latency_ms": 4.213846999959969
+      },
+      {
+        "id": "q06",
+        "category": "direct",
+        "recall@5": 1.0,
+        "mrr": 1.0,
+        "ndcg@10": 1.0,
+        "latency_ms": 3.9967309999155987
+      },
+      {
+        "id": "q07",
+        "category": "outdated",
+        "recall@5": 1.0,
+        "mrr": 1.0,
+        "ndcg@10": 1.0,
+        "latency_ms": 4.010432999962177
+      },
+      {
+        "id": "q08",
+        "category": "conflicting_versions",
+        "recall@5": 1.0,
+        "mrr": 0.5,
+        "ndcg@10": 0.6309297535714575,
+        "latency_ms": 3.9508200000000215
+      },
+      {
+        "id": "q09",
+        "category": "conflicting_versions",
+        "recall@5": 1.0,
+        "mrr": 1.0,
+        "ndcg@10": 1.0,
+        "latency_ms": 3.7084790000108114
+      },
+      {
+        "id": "q10",
+        "category": "conflicting_versions",
+        "recall@5": 1.0,
+        "mrr": 1.0,
+        "ndcg@10": 1.0,
+        "latency_ms": 3.785675999893101
+      },
+      {
+        "id": "q11",
+        "category": "direct",
+        "recall@5": 1.0,
+        "mrr": 1.0,
+        "ndcg@10": 1.0,
+        "latency_ms": 3.8806109999995897
+      },
+      {
+        "id": "q12",
+        "category": "conflicting_versions",
+        "recall@5": 1.0,
+        "mrr": 1.0,
+        "ndcg@10": 1.0,
+        "latency_ms": 3.7415799999962474
+      },
+      {
+        "id": "q13",
+        "category": "exact_policy_id",
+        "recall@5": 1.0,
+        "mrr": 1.0,
+        "ndcg@10": 1.0,
+        "latency_ms": 3.875092000043878
+      },
+      {
+        "id": "q14",
+        "category": "direct",
+        "recall@5": 1.0,
+        "mrr": 0.5,
+        "ndcg@10": 0.6309297535714575,
+        "latency_ms": 4.140034999977615
+      },
+      {
+        "id": "q15",
+        "category": "direct",
+        "recall@5": 1.0,
+        "mrr": 1.0,
+        "ndcg@10": 1.0,
+        "latency_ms": 3.8063289999854533
+      },
+      {
+        "id": "q16",
+        "category": "direct",
+        "recall@5": 1.0,
+        "mrr": 1.0,
+        "ndcg@10": 1.0,
+        "latency_ms": 3.9426900000307796
+      },
+      {
+        "id": "q17",
+        "category": "exact_policy_id",
+        "recall@5": 1.0,
+        "mrr": 1.0,
+        "ndcg@10": 1.0,
+        "latency_ms": 3.6739450000595752
+      },
+      {
+        "id": "q18",
+        "category": "direct",
+        "recall@5": 1.0,
+        "mrr": 1.0,
+        "ndcg@10": 1.0,
+        "latency_ms": 4.215977999933784
+      },
+      {
+        "id": "q19",
+        "category": "direct",
+        "recall@5": 1.0,
+        "mrr": 1.0,
+        "ndcg@10": 1.0,
+        "latency_ms": 4.191040999899087
+      },
+      {
+        "id": "q20",
+        "category": "direct",
+        "recall@5": 1.0,
+        "mrr": 1.0,
+        "ndcg@10": 1.0,
+        "latency_ms": 3.8347529999782637
+      },
+      {
+        "id": "q21",
+        "category": "direct",
+        "recall@5": 1.0,
+        "mrr": 1.0,
+        "ndcg@10": 1.0,
+        "latency_ms": 4.143142999964766
+      },
+      {
+        "id": "q22",
+        "category": "direct",
+        "recall@5": 1.0,
+        "mrr": 1.0,
+        "ndcg@10": 1.0,
+        "latency_ms": 4.138776999980109
+      },
+      {
+        "id": "q23",
+        "category": "exact_policy_id",
+        "recall@5": 1.0,
+        "mrr": 1.0,
+        "ndcg@10": 1.0,
+        "latency_ms": 3.9822270000513527
+      },
+      {
+        "id": "q24",
+        "category": "direct",
+        "recall@5": 1.0,
+        "mrr": 1.0,
+        "ndcg@10": 1.0,
+        "latency_ms": 4.068124000013995
+      },
+      {
+        "id": "q25",
+        "category": "conflicting_versions",
+        "recall@5": 1.0,
+        "mrr": 1.0,
+        "ndcg@10": 1.0,
+        "latency_ms": 3.966216999970129
+      },
+      {
+        "id": "q26",
+        "category": "multi_doc",
+        "recall@5": 1.0,
+        "mrr": 1.0,
+        "ndcg@10": 0.9060254355346823,
+        "latency_ms": 3.9578360000405155
+      }
+    ]
+  }
+}
