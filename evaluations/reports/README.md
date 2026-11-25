@@ -8,7 +8,9 @@ configuration, dataset and corpus.
 |---|---|---|
 | [2026-11-25-retrieval-baseline-hash](2026-11-25-retrieval-baseline-hash.md) | Week 3 baseline: dense vs sparse vs hybrid | Offline hash embeddings and `simple` tokenizer (no OpenAI key or tiktoken download in the environment that ran it); 38-chunk corpus. Not representative of production quality. |
 
-| [2026-11-25-answers-offline](2026-11-25-answers-offline.md) | Week 4: baseline pipeline vs LangGraph agent | Offline extractive generator and hash embeddings; measures routing, conflict handling, abstention and citations, not answer quality. |
+| [2026-11-25-answers-offline](2026-11-25-answers-offline.md) | Week 4: baseline pipeline vs LangGraph agent (30 questions) | Offline extractive generator and hash embeddings; measures routing, conflict handling, abstention and citations, not answer quality. |
+| [2026-11-25-retrieval-105-hash](2026-11-25-retrieval-105-hash.md) | Week 6: dense vs sparse vs hybrid on 105 questions | Offline hash embeddings; 80-chunk corpus. |
+| [2026-11-25-full-comparison-offline](2026-11-25-full-comparison-offline.md) | Week 6: dense, hybrid, hybrid+rerank, +rewrite, full agent on 105 questions | Offline; faithfulness is a proxy that favours the full agent; tokens and cost are zero without a model. |
 
 Observed variance: one of five runs of the baseline gave sparse MRR 0.859
 instead of 0.840 (all other metrics identical). The cause is not yet confirmed;

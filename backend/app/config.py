@@ -87,6 +87,11 @@ class Settings(BaseSettings):
     agent_timeout_seconds: float = Field(default=45, gt=0)
     agent_max_evidence_tokens: int = Field(default=6000, ge=500)
     agent_sufficient_coverage: float = Field(default=0.6, gt=0, le=1)
+    # Stage switches, used by the ablation benchmark (all on in production).
+    agent_enable_rewrite: bool = True
+    agent_enable_conflicts: bool = True
+    agent_enable_verification: bool = True
+    agent_enable_injection_filter: bool = True
 
     # Rate limits (per user, per organization, fixed window)
     rate_limit_window_seconds: int = Field(default=60, ge=1)

@@ -114,6 +114,21 @@ from the verified JWT (migration 0005), and source previews
 retrieval, so a restricted or other-tenant chunk returns 404
 (`test_source_preview_is_tenant_scoped`, `test_source_preview_respects_document_acls`).
 
+## Hardening (Week 6)
+
+| Control | How | Tests |
+|---|---|---|
+| Audit logs | AFTER triggers on members, invitations, documents, versions, permissions, reindex jobs; actor from JWT claims; owners/admins read, nobody writes | `test_audit_logs.py` |
+| Rate limits | Postgres fixed window per user + org + scope; 429 `rate_limited` with `Retry-After` | `test_chat_rate_limit_per_user_and_org` |
+| Quotas | Plan limits on documents, storage, questions/day from aggregate-only `org_usage`; 429 `quota_exceeded` | `test_document_quota`, `test_questions_per_day_quota_and_enterprise_unlimited` |
+| Revocation | Answers built from now-unreadable documents are hidden, lose citations, and are not reused as history | `test_revocation.py` |
+| Prompt injection | Untrusted `<source>` blocks, frozen auth context, citation checks, and an evidence filter that drops instructions aimed at AI | `test_prompt_injection.py`, `test_injection_filter.py` |
+| Route sweep | Every documented endpoint called cross-tenant (403/404) and unauthenticated (401) | `test_route_isolation.py` |
+| Errors and logs | `{"error": {...}}` without internals or echoed input; JSON logs with redaction; spans without content | `test_errors.py`, `test_logging.py`, `test_tracing.py` |
+
+`GET /v1/organizations/{id}/usage` returns your own usage, plus organization
+totals and quotas for owners/admins. `GET .../audit-logs` is owners/admins only.
+
 ## Evidence
 
 | Requirement | Tests |
@@ -147,5 +162,4 @@ API tests: `backend/tests/security/test_api_isolation.py` and
   confirmation in Supabase Auth settings.
 - No ownership transfer, org deletion endpoint or audit log yet (Week 6).
 - No endpoints to grant document permissions yet (schema and policies exist).
-- Revocation hides stored citations immediately, but stored answer text is not
-  yet revalidated (Week 6).
+- Rate-limit windows are fixed (bursts at window edges can reach twice the limit).

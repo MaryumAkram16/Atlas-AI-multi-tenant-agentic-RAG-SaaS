@@ -15,9 +15,10 @@ def test_benchmark_runs_and_labels_resolve(qdrant_url):
         REPO / "evaluations/datasets/hr_refund_v1.jsonl",
         REPO / "sample-data/acme",
     )
-    assert result["questions_total"] == 30
-    assert result["questions_scored"] == 26
+    assert result["questions_total"] >= 100
+    scored = result["questions_scored"]
+    assert scored >= 80
     for mode in ("dense", "sparse", "hybrid"):
         s = result["overall"][mode]
-        assert s["n"] == 26 and 0 <= s["recall@5"] <= 1 and 0 <= s["mrr"] <= 1
+        assert s["n"] == scored and 0 <= s["recall@5"] <= 1 and 0 <= s["mrr"] <= 1
     assert "| hybrid |" in to_markdown(result)

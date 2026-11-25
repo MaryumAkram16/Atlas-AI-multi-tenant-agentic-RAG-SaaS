@@ -4,7 +4,9 @@ Multi-tenant agentic RAG SaaS. Organizations upload documents (PDF, DOCX, TXT,
 MD) and ask questions; answers are grounded with citations, flag version
 conflicts, and abstain when evidence is weak.
 
-> **Status: Week 5, web app.** Multi-tenant foundation with RLS (Week 1),
+> **Status: Week 6, hardened.** Audit logs, quotas, rate limits, revocation
+> handling, OpenTelemetry tracing, prompt-injection defences and a 105-question
+> evaluation on top of the following. **Week 5, web app.** Multi-tenant foundation with RLS (Week 1),
 > document ingestion into Qdrant (Week 2), hybrid search with a Postgres
 > permission recheck (Week 3), a bounded LangGraph agent with conflict handling,
 > citation checks and abstention (Week 4), and a React app with Supabase Auth
@@ -99,6 +101,10 @@ Endpoints so far:
 | GET | `/v1/organizations/{org_id}/jobs/{id}` | ingestion job status |
 | POST | `/v1/organizations/{org_id}/chat` | ask the agent (all roles); SSE (`meta`, `step`, `delta`, `citations`, `done`) with `Accept: text/event-stream`, else JSON with `status`, `evidence_status`, `citations`, `conflicts`, `retrieval_attempts`, `trace_id` |
 | GET | `/v1/organizations/{org_id}/conversations[/{id}]` | own conversations, messages and citations |
+| GET | `/v1/organizations/{org_id}/usage` | own usage; owners/admins also get org totals and quotas |
+| GET | `/v1/organizations/{org_id}/audit-logs` | owners/admins: sensitive actions, newest first |
+
+Errors always look like `{"error": {"code": "...", "message": "...", "request_id": "..."}}`.
 
 Upload a document and watch it get indexed:
 
@@ -122,13 +128,19 @@ extractive generator that quotes matching sentences. Set both to `openai` with
 
 ## Evaluation
 
-Two benchmarks over 30 labeled questions ([how to run](evaluations/benchmarks/README.md)):
-retrieval (dense vs sparse vs hybrid) and answers (Week 3 baseline vs the
-agent). The reports so far ([index](evaluations/reports/README.md)) were run
-offline: hash embeddings, an extractive generator and a 38-chunk corpus. They
-check the pipeline and the agent's routing, conflict handling and abstention;
-they are not quality measurements. Blueprint targets (e.g. Recall@5 ≥ 85%,
-faithfulness ≥ 90%) are targets, not results.
+Benchmarks over 105 labeled questions ([how to run](evaluations/benchmarks/README.md)):
+retrieval (dense vs sparse vs hybrid) and a full comparison of five
+configurations (dense, hybrid, hybrid+rerank, +rewrite, full agent) for fact
+accuracy, abstention, citation correctness, faithfulness, stale citations,
+injection resistance, latency and cost. The reports so far
+([index](evaluations/reports/README.md)) were run **offline** (hash embeddings, an
+extractive generator, an 80-chunk corpus): they check behaviour such as stale
+citations and injection handling, not answer quality. Blueprint targets (e.g.
+Recall@5 ≥ 85%, faithfulness ≥ 90%) are targets, not results.
+
+Security tests are a separate suite (`backend/tests/security`): tenant isolation
+via the API and directly in Postgres, a sweep of every endpoint, prompt
+injection, revocation, audit logs and limits.
 
 How isolation works and what is tested: [docs/security/tenant-isolation.md](docs/security/tenant-isolation.md).
 

@@ -39,11 +39,14 @@ def after_classify(state: AgentState) -> str:
     return "plan_retrieval"  # knowledge and comparison questions must retrieve
 
 
-def after_assess(state: AgentState, max_rewrites: int) -> str:
+def after_assess(state: AgentState, max_rewrites: int, enable_rewrite: bool = True) -> str:
     if _halted(state):
         return FINAL
     if state.get("evidence_status") == "sufficient":
         return "detect_conflicts"
+    if not enable_rewrite:
+        # Ablation: answer from whatever was found (abstain only with no evidence).
+        return FINAL if state.get("evidence_status") == "none" else "detect_conflicts"
     if state.get("attempts", 0) <= max_rewrites:
         return "rewrite_query"
     return FINAL
@@ -60,7 +63,7 @@ def _guard(next_node: str):
 
 
 @lru_cache(maxsize=8)
-def build_graph(max_rewrites: int):
+def build_graph(max_rewrites: int, enable_rewrite: bool = True):
     g = StateGraph(AgentState)
     for fn in (
         n.validate_context,
@@ -95,7 +98,9 @@ def build_graph(max_rewrites: int):
         ("generate_answer", "verify_citations"),
     ]:
         g.add_conditional_edges(a, _guard(b))
-    g.add_conditional_edges("assess_evidence", lambda s: after_assess(s, max_rewrites))
+    g.add_conditional_edges(
+        "assess_evidence", lambda s: after_assess(s, max_rewrites, enable_rewrite)
+    )
     g.add_conditional_edges("verify_citations", after_verify)
     g.add_edge(FINAL, END)
     return g.compile()
@@ -116,7 +121,7 @@ async def run_agent(
         "trace": [],
         "usage": [],
     }
-    graph = build_graph(settings.agent_max_rewrites)
+    graph = build_graph(settings.agent_max_rewrites, settings.agent_enable_rewrite)
     config = {
         "configurable": {"deps": deps},
         "recursion_limit": settings.agent_max_steps + 10,

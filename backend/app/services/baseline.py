@@ -14,7 +14,7 @@ from app.services.answering import (
     is_insufficient,
     parse_citations,
 )
-from app.services.llm import ChatLLM, TextDelta
+from app.services.llm import ChatLLM, TextDelta, Usage
 
 
 @dataclass
@@ -23,6 +23,7 @@ class BaselineResult:
     status: str
     evidence: list[Evidence]
     cited: list[Evidence]
+    usage: list[Usage] | None = None
 
 
 async def baseline_answer(
@@ -35,6 +36,7 @@ async def baseline_answer(
     evidence_source,
     llm: ChatLLM,
     max_chunks: int = 8,
+    mode: str = "hybrid",
 ) -> BaselineResult:
     cands = await run_in_threadpool(
         retriever.retrieve,
@@ -42,6 +44,7 @@ async def baseline_answer(
         organization_id=organization_id,
         document_ids=document_ids,
         version_ids=version_ids,
+        mode=mode,
     )
     authorized = await evidence_source.authorize(
         [c.chunk_id for c in cands], {c.chunk_id: c.score for c in cands}, include_history=False
@@ -49,12 +52,14 @@ async def baseline_answer(
     evidence = authorized[:max_chunks]
     if not evidence:
         return BaselineResult(INSUFFICIENT_EVIDENCE_ANSWER, "insufficient_evidence", [], [])
-    parts = []
+    parts, usage = [], []
     async for event in llm.stream(build_messages(question, evidence, [])):
         if isinstance(event, TextDelta):
             parts.append(event.text)
+        elif isinstance(event, Usage):
+            usage.append(event)
     answer = "".join(parts).strip()
     if is_insufficient(answer):
-        return BaselineResult(answer, "insufficient_evidence", evidence, [])
+        return BaselineResult(answer, "insufficient_evidence", evidence, [], usage)
     cited = [evidence[n - 1] for n in parse_citations(answer, len(evidence))]
-    return BaselineResult(answer, "answered", evidence, cited)
+    return BaselineResult(answer, "answered", evidence, cited, usage)

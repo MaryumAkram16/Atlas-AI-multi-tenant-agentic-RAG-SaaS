@@ -52,6 +52,7 @@ class AgentState(TypedDict, total=False):
     attempts: int
     candidates: list[tuple[UUID, float]]
     authorized_count: int
+    injections_removed: int
     evidence: list[Evidence]
     evidence_status: str
     assessment_reason: str

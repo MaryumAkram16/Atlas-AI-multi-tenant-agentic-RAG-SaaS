@@ -29,8 +29,12 @@ jobs:
         run: ruff check .
       - name: Format check
         run: ruff format --check .
-      - name: Unit, security, ingestion and migration tests
-        run: pytest -m "not integration"
+      - name: Security suite (tenant isolation, injection, revocation, audit, limits)
+        run: pytest tests/security
+        env:
+          ATLAS_REQUIRE_STACK: "1"
+      - name: Unit, ingestion, agent, migration and benchmark tests
+        run: pytest -m "not integration" --ignore=tests/security
         env:
           ATLAS_REQUIRE_STACK: "1"
 

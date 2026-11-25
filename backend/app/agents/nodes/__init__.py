@@ -13,6 +13,7 @@ from langchain_core.runnables import RunnableConfig
 
 from app.agents.state import FORBIDDEN_STATE_KEYS, AgentDeps, AgentState, AuthContext
 from app.agents.tools.conflicts import detect_conflicts, excluded_documents, parse_meta, resolve
+from app.agents.tools.injection import sanitize
 from app.agents.tools.reasoner import classify, coverage
 from app.agents.tools.text import policy_ids, salient_terms
 from app.agents.tools.verify import verify
@@ -166,7 +167,16 @@ async def validate_permissions(state: AgentState, deps: AgentDeps) -> dict:
         dict(candidates),
         include_history=state["plan"]["include_history"],
     )
-    return {"evidence": evidence, "authorized_count": len(evidence)}
+    authorized = len(evidence)
+    removed = 0
+    if deps.settings.agent_enable_injection_filter:
+        # Untrusted text: strip instructions aimed at the model before it sees anything.
+        evidence, removed = sanitize(evidence)
+    return {
+        "evidence": evidence,
+        "authorized_count": authorized,
+        "injections_removed": state.get("injections_removed", 0) + removed,
+    }
 
 
 @node("rerank_results")
@@ -228,6 +238,8 @@ async def rewrite_query(state: AgentState, deps: AgentDeps) -> dict:
 
 @node("detect_conflicts")
 async def detect_conflicts_node(state: AgentState, deps: AgentDeps) -> dict:
+    if not deps.settings.agent_enable_conflicts:
+        return {"conflicts": []}
     evidence = state["evidence"]
     headers = await deps.evidence.headers(list({e.version_id for e in evidence}))
     metas = {}
@@ -242,6 +254,8 @@ async def detect_conflicts_node(state: AgentState, deps: AgentDeps) -> dict:
 
 @node("compare_versions")
 async def compare_versions(state: AgentState, deps: AgentDeps) -> dict:
+    if not deps.settings.agent_enable_conflicts:
+        return {"conflicts": [], "precedence_notes": [], "answer_evidence": state["evidence"]}
     resolved = [resolve(c, metas) for c, metas in state.get("conflicts", [])]
     notes = [n for c in resolved for n in c.notes]
     evidence = state["evidence"]
@@ -298,6 +312,8 @@ async def verify_citations(state: AgentState, deps: AgentDeps) -> dict:
     answer = state.get("answer", "")
     if is_insufficient(answer):
         return {"status": "insufficient_evidence", "verification": {"ok": True, "abstained": True}}
+    if not deps.settings.agent_enable_verification:
+        return {"status": "answered", "verification": {"skipped": True}}
     result = verify(answer, _source_texts(state))
     if result.ok:
         return {"status": "answered", "verification": {"ok": True, "problems": []}}
