@@ -7,6 +7,7 @@ import { OrgsProvider } from "./hooks/useOrgs";
 import { LoginPage, SignupPage } from "./pages/AuthPages";
 import { AuditLogPage } from "./pages/AuditLogPage";
 import { ChatPage } from "./pages/ChatPage";
+import { DemoPage } from "./pages/DemoPage";
 import { EvaluationsPage } from "./pages/EvaluationsPage";
 import { InvitePage } from "./pages/InvitePage";
 import { KnowledgeBasePage } from "./pages/KnowledgeBasePage";
@@ -32,6 +33,7 @@ export function App() {
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
+          <Route path="/demo" element={<DemoPage />} />
           <Route path="/invite/:token" element={<RequireAuth><InvitePage /></RequireAuth>} />
           <Route path="/" element={<RequireAuth><OrgPickerPage /></RequireAuth>} />
           <Route path="/workspaces" element={<RequireAuth><OrgPickerPage forceList /></RequireAuth>} />

@@ -8,6 +8,8 @@ interface AuthState {
   token: string | null;
   userId: string | null;
   email: string | null;
+  /** Anonymous demo visitor (Supabase anonymous sign-in). */
+  isAnonymous: boolean;
   signOut: () => Promise<void>;
 }
 
@@ -31,7 +33,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     loading,
     token: session?.access_token ?? null,
     userId: session?.user.id ?? null,
-    email: session?.user.email ?? null,
+    email: session?.user.email || null,
+    isAnonymous: Boolean(session?.user.is_anonymous),
     signOut: async () => {
       await supabase.auth.signOut();
     },

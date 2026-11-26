@@ -18,3 +18,4 @@ sequentially, and add it to the index below.
 | [0011](0011-document-sharing.md) | Document sharing and visibility changes | Accepted |
 | [0012](0012-in-product-evaluations.md) | In-product evaluations | Accepted |
 | [0013](0013-answer-feedback.md) | Answer feedback | Accepted |
+| [0014](0014-public-demo-workspace.md) | Public demo workspace | Accepted |

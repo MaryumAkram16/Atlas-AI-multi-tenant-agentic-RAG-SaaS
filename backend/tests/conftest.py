@@ -113,7 +113,9 @@ def seeded(test_db):
 
     with psycopg.connect(test_db["admin"]) as conn:
         conn.execute("TRUNCATE public.organizations CASCADE")
-        conn.execute("TRUNCATE public.audit_logs, app_private.rate_limit_counters")
+        conn.execute(
+            "TRUNCATE public.audit_logs, app_private.rate_limit_counters, app_private.demo_config"
+        )
         seed.seed(conn)
     return test_db
 

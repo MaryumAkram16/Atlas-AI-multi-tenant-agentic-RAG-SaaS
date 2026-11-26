@@ -13,4 +13,6 @@ export const config = {
   apiUrl: (env.VITE_API_URL || "").replace(/\/$/, ""),
   /** False when a hosted build has no backend configured yet. */
   configured: sameOrigin || Boolean(env.VITE_SUPABASE_URL && env.VITE_API_URL),
+  /** Show "Explore the demo" (needs anonymous sign-in and a demo workspace). */
+  demoEnabled: env.VITE_DEMO_ENABLED === "true",
 };

@@ -36,6 +36,10 @@ def _forbidden(exc: RoleRuleError) -> HTTPException:
 async def create_organization(
     body: OrganizationCreate, user: CurrentUser, db: DB
 ) -> OrganizationOut:
+    if user.is_anonymous:
+        raise HTTPException(
+            status.HTTP_403_FORBIDDEN, detail="sign up to create your own workspace"
+        )
     try:
         async with db.transaction() as conn:
             org_id = await repo.create_organization(conn, body.name, body.slug)

@@ -18,7 +18,7 @@ export function Logo() {
 export function Layout() {
   const { orgId } = useParams();
   const { orgs } = useOrgs();
-  const { email, signOut } = useAuth();
+  const { email, signOut, isAnonymous } = useAuth();
   const navigate = useNavigate();
   const org = orgs.find((o) => o.id === orgId);
 
@@ -40,7 +40,7 @@ export function Layout() {
                 {o.name}
               </option>
             ))}
-            <option value="__new">+ New workspace</option>
+            {!isAnonymous && <option value="__new">+ New workspace</option>}
           </select>
         </label>
         {org && (
@@ -56,7 +56,7 @@ export function Layout() {
         <div className="sidebar-foot">
           {org && <Badge tone="slate">{org.role}</Badge>}
           <span className="muted small" title={email ?? ""}>
-            {email}
+            {isAnonymous ? "Demo visitor" : email}
           </span>
           <button className="btn btn-ghost" onClick={() => void signOut()}>
             Sign out
@@ -64,6 +64,15 @@ export function Layout() {
         </div>
       </aside>
       <main className="main">
+        {isAnonymous && (
+          <div className="banner banner-info demo-banner" role="note">
+            Demo workspace with sample documents: ask questions and open sources; uploads are off
+            and questions are limited per day. Your chats are private.{" "}
+            <button className="link" onClick={() => void signOut().then(() => navigate("/signup"))}>
+              Create your own workspace
+            </button>
+          </div>
+        )}
         {org ? <Outlet context={org} /> : <p className="muted">Workspace not found.</p>}
       </main>
     </div>

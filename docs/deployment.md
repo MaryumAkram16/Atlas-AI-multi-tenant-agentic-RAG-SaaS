@@ -79,6 +79,35 @@ ATLAS_API_URL=<api-url> SUPABASE_URL=https://<ref>.supabase.co SUPABASE_ANON_KEY
 
 (Confirm both demo emails first; Supabase sends confirmation links.)
 
+## 8. Public demo workspace (optional)
+
+Lets visitors try Atlas without an account. Each visitor gets a private
+anonymous session and joins one sample workspace as a **viewer** (ask questions,
+open sources, give feedback; no uploads, no workspace creation, no member list).
+
+1. Sign in to the app with an account you control (not a personal email: it is
+   the demo workspace's owner) and create a workspace such as "Atlas demo".
+   Upload `sample-data/acme/*.md` and wait until every document is ready.
+2. Supabase → Authentication → Sign In / Providers → enable **anonymous
+   sign-ins**. Turn on CAPTCHA protection (Authentication → Attack Protection)
+   to slow down automated sign-ups.
+3. Tell the database which workspace is the demo (run once; the API cannot change it):
+
+   ```bash
+   gcloud run jobs execute atlas-migrate --region <region> --wait \
+     --args="-m,app.db.manage,demo-config,<organization-id>"
+   ```
+
+   `--args="-m,app.db.manage,demo-config,--clear"` turns it off again.
+4. Vercel: add `VITE_DEMO_ENABLED=true` and redeploy. The sign-in page shows
+   "Explore the demo without an account".
+
+Limits: visitors share the workspace's daily question quota (`QUOTA_FREE_*`
+for a free-plan workspace) and the per-user rate limit. Anonymous users pile up
+in Supabase Auth; delete old ones periodically (Supabase documents a SQL
+snippet for anonymous users older than 30 days). Feedback from visitors is
+visible to the demo workspace's owner and admins.
+
 ## Before going public
 
 - Budget alert created (step 3), Cloud Run max instances capped, OpenAI usage

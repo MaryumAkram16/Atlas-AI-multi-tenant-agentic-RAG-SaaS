@@ -946,6 +946,20 @@
         "title": "DatasetOut",
         "type": "object"
       },
+      "DemoJoined": {
+        "properties": {
+          "organization_id": {
+            "format": "uuid",
+            "title": "Organization Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "organization_id"
+        ],
+        "title": "DemoJoined",
+        "type": "object"
+      },
       "DocumentDetail": {
         "properties": {
           "access": {
@@ -2855,6 +2869,32 @@
         "summary": "Ready",
         "tags": [
           "health"
+        ]
+      }
+    },
+    "/v1/demo/join": {
+      "post": {
+        "operationId": "join_demo_v1_demo_join_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DemoJoined"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Join Demo",
+        "tags": [
+          "demo"
         ]
       }
     },

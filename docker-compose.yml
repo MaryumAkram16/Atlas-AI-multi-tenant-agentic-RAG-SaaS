@@ -89,6 +89,8 @@ services:
       # Local only: no email server, so accounts are confirmed immediately.
       GOTRUE_MAILER_AUTOCONFIRM: ${AUTH_AUTOCONFIRM:-true}
       GOTRUE_DISABLE_SIGNUP: "false"
+      # Demo visitors (see docs/deployment.md, "Public demo workspace").
+      GOTRUE_EXTERNAL_ANONYMOUS_USERS_ENABLED: ${DEMO_ENABLED:-false}
     ports:
       - "${AUTH_PORT:-9999}:9999"
     depends_on:
@@ -106,6 +108,7 @@ services:
       context: ./frontend
       args:
         VITE_SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
+        VITE_DEMO_ENABLED: ${DEMO_ENABLED:-false}
     ports:
       - "${WEB_PORT:-8080}:80"
     depends_on:

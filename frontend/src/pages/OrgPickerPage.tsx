@@ -9,7 +9,7 @@ import { slugify } from "../services/permissions";
 import type { Organization } from "../services/types";
 
 export function OrgPickerPage({ forceList = false }: { forceList?: boolean }) {
-  const { token, email, signOut } = useAuth();
+  const { token, email, signOut, isAnonymous } = useAuth();
   const { orgs, loading, refresh } = useOrgs();
   const navigate = useNavigate();
   const [name, setName] = useState("");
@@ -42,7 +42,7 @@ export function OrgPickerPage({ forceList = false }: { forceList?: boolean }) {
       <div className="card auth-card wide">
         <Logo />
         <h1>Your workspaces</h1>
-        <p className="muted small">Signed in as {email}</p>
+        <p className="muted small">{isAnonymous ? "Demo visitor" : `Signed in as ${email}`}</p>
         {orgs.length > 0 && (
           <ul className="list">
             {orgs.map((o) => (
@@ -52,6 +52,12 @@ export function OrgPickerPage({ forceList = false }: { forceList?: boolean }) {
             ))}
           </ul>
         )}
+        {isAnonymous ? (
+          <p className="muted">
+            Demo visitors can't create workspaces. <Link to="/demo">Back to the demo</Link> or sign
+            out and create an account.
+          </p>
+        ) : (
         <form onSubmit={create} className="stack">
           <h2>Create a workspace</h2>
           <ErrorBanner message={error} />
@@ -65,6 +71,7 @@ export function OrgPickerPage({ forceList = false }: { forceList?: boolean }) {
             {busy ? "Creating…" : "Create workspace"}
           </button>
         </form>
+        )}
         <button className="btn btn-ghost" onClick={() => void signOut()}>Sign out</button>
       </div>
     </div>

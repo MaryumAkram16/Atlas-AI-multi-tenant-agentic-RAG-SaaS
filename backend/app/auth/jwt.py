@@ -22,6 +22,8 @@ class AuthError(Exception):
 class AuthUser:
     user_id: UUID
     email: str | None
+    # Supabase anonymous sign-in (demo visitors); no email, limited rights.
+    is_anonymous: bool = False
 
 
 class JWTVerifier:
@@ -80,4 +82,8 @@ class JWTVerifier:
         except ValueError:
             raise AuthError("invalid subject") from None
         email = claims.get("email")
-        return AuthUser(user_id=user_id, email=email.lower() if isinstance(email, str) else None)
+        return AuthUser(
+            user_id=user_id,
+            email=email.lower() if isinstance(email, str) else None,
+            is_anonymous=claims.get("is_anonymous") is True,
+        )

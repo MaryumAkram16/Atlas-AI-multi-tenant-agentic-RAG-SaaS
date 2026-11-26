@@ -171,6 +171,13 @@ API tests: `backend/tests/security/test_api_isolation.py` and
 `test_rls_direct.py` and the DB tests in `test_document_isolation.py`. Chat:
 `test_chat_isolation.py`.
 
+## Demo visitors
+
+Anonymous visitors (ADR 0014) join only the operator-configured demo workspace,
+only as viewers, through `app_private.join_demo()`. They cannot create
+workspaces, accept invitations or see other members. Tests:
+`tests/security/test_demo.py`.
+
 ## Known limits
 
 - Invitation tokens are returned to the inviter (no email delivery yet).

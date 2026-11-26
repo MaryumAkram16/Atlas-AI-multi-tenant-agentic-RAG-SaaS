@@ -179,3 +179,4 @@ input:focus, select:focus, textarea:focus, button:focus-visible {
 .chip input { position: absolute; opacity: 0; pointer-events: none; }
 .chip-on { border-color: var(--teal); color: var(--teal); }
 .add-case { display: flex; flex-direction: column; gap: 0.35rem; min-width: 14rem; }
+.demo-banner { margin-bottom: 1rem; }

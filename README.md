@@ -27,6 +27,8 @@ until the Cloud Run deployment in [docs/deployment.md](docs/deployment.md) is do
 - **"Why this answer?"**: every answer can show how Atlas searched (including
   rewrites), which document versions it used or set aside and why, the citation
   check, and why it abstained ([screenshot](docs/screenshots/why-this-answer.png)).
+- **Public demo workspace** (optional): visitors explore sample documents
+  without an account, each in a private anonymous session with viewer rights.
 - **Answer feedback**: 👍/👎 with a reason; admins turn a 👎 into an evaluation
   case in one step.
 - **In-product evaluations**: owners and admins build question sets from their

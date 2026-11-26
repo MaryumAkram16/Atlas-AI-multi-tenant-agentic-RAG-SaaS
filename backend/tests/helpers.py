@@ -46,7 +46,7 @@ def auth_header(user) -> dict[str, str]:
 
 
 @contextmanager
-def restricted_session(api_conninfo: str, user=None):
+def restricted_session(api_conninfo: str, user=None, *, anonymous: bool = False):
     """Direct DB access exactly like the API: log in as the restricted atlas_api
     role, then SET LOCAL ROLE authenticated with the user's claims.
     Yields a cursor inside a transaction that is rolled back afterwards."""
@@ -55,6 +55,8 @@ def restricted_session(api_conninfo: str, user=None):
             conn.execute("SET LOCAL ROLE authenticated")
             if user is not None:
                 claims = {"sub": str(user.id), "email": user.email, "role": "authenticated"}
+                if anonymous:
+                    claims["is_anonymous"] = True
                 conn.execute(
                     "SELECT set_config('request.jwt.claims', %s, true)", (json.dumps(claims),)
                 )

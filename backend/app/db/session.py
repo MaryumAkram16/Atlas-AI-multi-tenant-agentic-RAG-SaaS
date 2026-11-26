@@ -34,7 +34,12 @@ class UserDB:
     def __init__(self, pool: AsyncConnectionPool, user: AuthUser) -> None:
         self._pool = pool
         self._claims = json.dumps(
-            {"sub": str(user.user_id), "email": user.email, "role": "authenticated"}
+            {
+                "sub": str(user.user_id),
+                "email": user.email,
+                "role": "authenticated",
+                "is_anonymous": user.is_anonymous,
+            }
         )
 
     @asynccontextmanager

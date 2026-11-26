@@ -8,6 +8,7 @@ python -m app.db.manage dev-token EMAIL  # HS256 token for a seed user (local/te
 import argparse
 import sys
 import time
+import uuid
 
 import jwt
 import psycopg
@@ -72,6 +73,28 @@ def cmd_dev_token(args: argparse.Namespace) -> None:
     print(jwt.encode(claims, settings.supabase_jwt_secret.get_secret_value(), algorithm="HS256"))
 
 
+def cmd_demo_config(args: argparse.Namespace) -> None:
+    """Choose (or clear) the organization anonymous demo visitors may join."""
+    url = get_settings().migration_database_url.get_secret_value()
+    with psycopg.connect(libpq_url(url)) as conn, conn.transaction():
+        if args.clear:
+            conn.execute("DELETE FROM app_private.demo_config")
+            print("demo workspace disabled")
+            return
+        row = conn.execute(
+            "SELECT name FROM public.organizations WHERE id = %s", (args.organization_id,)
+        ).fetchone()
+        if row is None:
+            sys.exit(f"no organization {args.organization_id}")
+        conn.execute(
+            "INSERT INTO app_private.demo_config (organization_id) VALUES (%s)"
+            " ON CONFLICT (singleton) DO UPDATE"
+            " SET organization_id = EXCLUDED.organization_id, updated_at = now()",
+            (args.organization_id,),
+        )
+        print(f"demo workspace: {row[0]} ({args.organization_id})")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(prog="python -m app.db.manage")
     sub = parser.add_subparsers(required=True)
@@ -81,6 +104,11 @@ def main() -> None:
     token.add_argument("email")
     token.add_argument("--ttl", type=int, default=3600, help="seconds")
     token.set_defaults(func=cmd_dev_token)
+    demo = sub.add_parser("demo-config", help="set the public demo organization")
+    group = demo.add_mutually_exclusive_group(required=True)
+    group.add_argument("organization_id", nargs="?", type=uuid.UUID)
+    group.add_argument("--clear", action="store_true")
+    demo.set_defaults(func=cmd_demo_config)
     args = parser.parse_args()
     args.func(args)
 

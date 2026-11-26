@@ -69,6 +69,9 @@ function AuthForm({ mode }: { mode: "login" | "signup" }) {
         <button className="btn btn-primary" disabled={busy || !config.configured} type="submit">
           {busy ? "Please wait…" : mode === "login" ? "Sign in" : "Sign up"}
         </button>
+        {config.demoEnabled && config.configured && (
+          <Link className="btn" to="/demo">Explore the demo without an account</Link>
+        )}
         <p className="muted small">
           {mode === "login" ? "New to Atlas AI? " : "Already have an account? "}
           <Link to={`/${other}${query}`}>{mode === "login" ? "Create an account" : "Sign in"}</Link>
