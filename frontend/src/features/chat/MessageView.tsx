@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Badge, STATUS_TONE, formatDate } from "../../components/ui";
 import type { ChatMessage, Citation, Conflict } from "../../services/types";
 import { WhyPanel } from "./WhyPanel";
@@ -64,7 +65,11 @@ const STATUS_COPY: Record<string, { tone: string; title: string; body: string }>
   error: { tone: "error", title: "Something went wrong", body: "Please try again." },
 };
 
-export function MessageView({ message, onCite }: { message: ChatMessage; onCite: (c: Citation) => void }) {
+export function MessageView({ message, onCite, footer }: {
+  message: ChatMessage;
+  onCite: (c: Citation) => void;
+  footer?: ReactNode;
+}) {
   if (message.role === "user") {
     return <div className="msg msg-user">{message.content}</div>;
   }
@@ -95,6 +100,7 @@ export function MessageView({ message, onCite }: { message: ChatMessage; onCite:
           ))}
         </ol>
       )}
+      {footer}
     </div>
   );
 }

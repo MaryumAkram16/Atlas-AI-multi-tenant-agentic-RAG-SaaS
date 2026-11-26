@@ -5,6 +5,7 @@ import { useAuth } from "../hooks/useAuth";
 import { apiRequest } from "../services/api";
 import { count, money, parseFacts, percent } from "../services/format";
 import type { DocumentItem, EvalDataset, EvalResult, EvalRun, Organization } from "../services/types";
+import { FeedbackReviewList } from "../features/evaluations/FeedbackReview";
 import { Tile } from "./UsagePage";
 
 interface DraftCase {
@@ -157,6 +158,12 @@ export function EvaluationsPage() {
           }} />
         </div>
       )}
+
+      <FeedbackReviewList base={base} token={token} datasets={datasets} onError={setError}
+        onCaseAdded={async () => {
+          await load();
+          if (selected) await openDataset(selected.id);
+        }} />
 
       <h2>Runs</h2>
       {runs.length === 0 ? (

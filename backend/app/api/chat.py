@@ -11,6 +11,7 @@ from fastapi.responses import StreamingResponse
 
 from app.auth.dependencies import DB, Org
 from app.repositories import chat as repo
+from app.repositories import feedback as feedback_repo
 from app.retrieval.authorize import DocumentNotAllowed
 from app.schemas.chat import (
     ChatRequest,
@@ -20,6 +21,7 @@ from app.schemas.chat import (
     ConversationOut,
     MessageOut,
 )
+from app.schemas.feedback import FeedbackOut
 from app.services import chat as service
 
 router = APIRouter(prefix="/v1/organizations/{org_id}", tags=["chat"])
@@ -108,6 +110,7 @@ async def get_conversation(conversation_id: UUID, ctx: Org, db: DB) -> Conversat
             conn, await repo.conversation_messages(conn, conversation_id)
         )
         citations = await repo.citations_for(conn, [m["id"] for m in messages])
+        mine = await feedback_repo.own_feedback(conn, [m["id"] for m in messages], ctx.user.user_id)
     by_message: dict[UUID, list[Citation]] = defaultdict(list)
     for c in citations:
         by_message[c.pop("message_id")].append(Citation(**c))
@@ -123,6 +126,7 @@ async def get_conversation(conversation_id: UUID, ctx: Org, db: DB) -> Conversat
             retrieval_attempts=meta.get("retrieval_attempts"),
             trace_id=meta.get("trace_id"),
             explanation=None if redacted else meta.get("explanation"),
+            feedback=FeedbackOut(**mine[m["id"]]) if m["id"] in mine else None,
         )
 
     return ConversationDetail(**conv, messages=[message(m) for m in messages])

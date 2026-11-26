@@ -6,8 +6,9 @@ import { SourcePreview } from "../features/chat/SourcePreview";
 import { useAuth } from "../hooks/useAuth";
 import { apiRequest } from "../services/api";
 import { postSSE } from "../services/sse";
+import { FeedbackBar } from "../features/chat/FeedbackBar";
 import type {
-  AnswerStatus, ChatMessage, Citation, Conflict, Conversation, ConversationDetail, Organization, Explanation } from "../services/types";
+  AnswerStatus, ChatMessage, Citation, Conflict, Conversation, ConversationDetail, Organization, Explanation, Feedback } from "../services/types";
 
 export const STEP_LABELS: Record<string, string> = {
   validate_context: "Checking access",
@@ -40,6 +41,8 @@ export function ChatPage() {
   const [preview, setPreview] = useState<Citation | null>(null);
   const bottom = useRef<HTMLDivElement>(null);
   const base = `/v1/organizations/${org.id}`;
+  const feedbackUrl = (messageId: string) =>
+    `${base}/conversations/${conversationId}/messages/${messageId}/feedback`;
 
   const loadConversations = useCallback(async () => {
     setConversations(await apiRequest<Conversation[]>(`${base}/conversations`, token));
@@ -76,11 +79,15 @@ export function ChatPage() {
     const update = (patch: Partial<ChatMessage>) =>
       setMessages((m) => m.map((x) => (x.id === "pending" ? { ...x, ...patch } : x)));
     let newConversation: string | null = null;
+    let messageId: string | null = null;
     try {
       let text = "";
       for await (const ev of postSSE(`${base}/chat`, token, { question: q, conversation_id: conversationId ?? null })) {
         const data = ev.data as Record<string, unknown>;
-        if (ev.event === "meta" && !conversationId) newConversation = String(data.conversation_id);
+        if (ev.event === "meta") {
+          messageId = String(data.message_id);
+          if (!conversationId) newConversation = String(data.conversation_id);
+        }
         else if (ev.event === "step") setStep(String(data.node));
         else if (ev.event === "delta") {
           text += String(data.text);
@@ -89,7 +96,7 @@ export function ChatPage() {
         } else if (ev.event === "citations") update({ citations: data.citations as Citation[] });
         else if (ev.event === "done") {
           update({
-            id: `a-${Date.now()}`,
+            id: messageId ?? `a-${Date.now()}`,
             status: data.status as AnswerStatus,
             conflicts: (data.conflicts as Conflict[]) ?? [],
             evidence_status: data.evidence_status as string,
@@ -137,7 +144,18 @@ export function ChatPage() {
                 <Spinner label="Thinking" /> {step ? STEP_LABELS[step] ?? "Working" : "Starting"}…
               </div>
             ) : (
-              <MessageView key={m.id} message={m} onCite={setPreview} />
+              <MessageView key={m.id} message={m} onCite={setPreview}
+                footer={m.role === "assistant" && m.status && conversationId && !m.id.startsWith("a-") ? (
+                  <FeedbackBar value={m.feedback}
+                    onSave={async (input) => {
+                      const saved = await apiRequest<Feedback>(feedbackUrl(m.id), token, { method: "PUT", body: { ...input } });
+                      setMessages((list) => list.map((x) => (x.id === m.id ? { ...x, feedback: saved } : x)));
+                    }}
+                    onClear={async () => {
+                      await apiRequest(feedbackUrl(m.id), token, { method: "DELETE" });
+                      setMessages((list) => list.map((x) => (x.id === m.id ? { ...x, feedback: null } : x)));
+                    }} />
+                ) : undefined} />
             ),
           )}
           <div ref={bottom} />

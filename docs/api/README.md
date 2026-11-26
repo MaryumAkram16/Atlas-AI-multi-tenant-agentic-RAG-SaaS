@@ -51,6 +51,9 @@ Errors always have the shape
 | POST | `/v1/organizations/{org_id}/evaluations` | Run a dataset now with the full agent, as you (your readable documents). | member |
 | GET | `/v1/organizations/{org_id}/evaluations` | List Runs | member |
 | GET | `/v1/organizations/{org_id}/evaluations/{run_id}` | Get Run | member |
+| PUT | `/v1/organizations/{org_id}/conversations/{conversation_id}/messages/{message_id}/feedback` | Rate an answer in one of your own conversations. Your question, rating, | member |
+| DELETE | `/v1/organizations/{org_id}/conversations/{conversation_id}/messages/{message_id}/feedback` | Remove Feedback | member |
+| GET | `/v1/organizations/{org_id}/feedback` | Review Feedback | member |
 | GET | `/v1/files/{path}` | Serves local-storage files for signed URLs (dev/test backend only). | none (signed URL) |
 
 `POST /v1/organizations/{org_id}/chat` streams Server-Sent Events when the request has

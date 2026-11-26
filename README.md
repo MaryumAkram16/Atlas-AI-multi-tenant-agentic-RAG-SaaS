@@ -27,6 +27,8 @@ until the Cloud Run deployment in [docs/deployment.md](docs/deployment.md) is do
 - **"Why this answer?"**: every answer can show how Atlas searched (including
   rewrites), which document versions it used or set aside and why, the citation
   check, and why it abstained ([screenshot](docs/screenshots/why-this-answer.png)).
+- **Answer feedback**: 👍/👎 with a reason; admins turn a 👎 into an evaluation
+  case in one step.
 - **In-product evaluations**: owners and admins build question sets from their
   own documents and benchmark the agent (facts, abstention, citations, latency).
 - **Admin pages**: usage and plan limits, the audit log, and evaluation runs

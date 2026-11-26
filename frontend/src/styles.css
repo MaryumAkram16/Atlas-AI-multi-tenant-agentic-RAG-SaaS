@@ -168,3 +168,14 @@ input:focus, select:focus, textarea:focus, button:focus-visible {
 .why-steps, .why-sources { margin: 0; padding-left: 1.2rem; display: flex; flex-direction: column; gap: 0.25rem; }
 .why-queries { margin: 0.2rem 0 0; padding-left: 1rem; list-style: none; }
 .why-queries code { font-size: 0.8rem; color: var(--slate); }
+
+/* Answer feedback */
+.feedback { margin-top: 0.6rem; display: flex; flex-direction: column; gap: 0.5rem; }
+.fb { padding: 0.15rem 0.45rem; font-size: 1rem; line-height: 1; }
+.fb-on { border-color: var(--teal); background: rgba(68, 213, 192, 0.12); }
+.feedback-form { display: flex; flex-direction: column; gap: 0.5rem; }
+.feedback-form textarea { width: 100%; }
+.chip { position: relative; display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.2rem 0.6rem; border: 1px solid var(--line); border-radius: 999px; font-size: 0.85rem; cursor: pointer; }
+.chip input { position: absolute; opacity: 0; pointer-events: none; }
+.chip-on { border-color: var(--teal); color: var(--teal); }
+.add-case { display: flex; flex-direction: column; gap: 0.35rem; min-width: 14rem; }

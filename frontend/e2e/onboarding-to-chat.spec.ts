@@ -94,6 +94,13 @@ test("new user: sign up, create org, invite, upload, chat with citations", async
   await expect(preview).toContainText("refund-policy-2026");
   await expect(preview.locator(".excerpt")).toContainText("7 days");
 
+  // The member rates the answer: not helpful, missing information.
+  await answer.getByRole("button", { name: "Not helpful" }).click();
+  await answer.getByText("Missing information", { exact: true }).click();
+  await answer.getByLabel("Feedback comment").fill("Should mention the premium exception");
+  await answer.getByRole("button", { name: "Send feedback" }).click();
+  await expect(answer.getByRole("button", { name: "Not helpful" })).toHaveAttribute("aria-pressed", "true");
+
   // The conversation is saved and listed.
   await expect(memberPage.getByLabel("Conversations")).toContainText("How many days");
 
@@ -109,6 +116,15 @@ test("new user: sign up, create org, invite, upload, chat with citations", async
   const runDetail = ownerPage.getByLabel("Run detail");
   await expect(runDetail).toContainText("succeeded", { timeout: 60_000 });
   await expect(runDetail.getByLabel("Run results")).toContainText("pass");
+
+  // The member's thumbs down becomes a test case in the dataset.
+  const feedback = ownerPage.getByLabel("Answer feedback");
+  await expect(feedback).toContainText("Should mention the premium exception");
+  await feedback.getByRole("button", { name: /Add .* to a dataset/ }).click();
+  await feedback.getByLabel("Correct facts").fill("7 days");
+  await feedback.getByRole("button", { name: "Add case" }).click();
+  await expect(feedback).toContainText("Added");
+  await expect(ownerPage.getByLabel("Evaluation datasets")).toContainText("2");
 
   // Usage counts the member's question; the audit log records the sharing.
   await ownerPage.getByRole("link", { name: "Usage" }).click();

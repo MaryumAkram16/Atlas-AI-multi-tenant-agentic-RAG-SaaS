@@ -141,6 +141,25 @@ export interface ChatMessage {
   trace_id?: string | null;
   created_at?: string;
   explanation?: Explanation | null;
+  feedback?: Feedback | null;
+}
+
+export type FeedbackReason = "incorrect" | "missing_information" | "wrong_citation" | "outdated" | "other";
+
+export interface Feedback {
+  message_id: string;
+  rating: "up" | "down";
+  reason: FeedbackReason | null;
+  comment: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface FeedbackReview extends Feedback {
+  user_id: string;
+  email: string | null;
+  question: string;
+  answer_status: string;
 }
 
 export interface Explanation {

@@ -4,6 +4,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
+from app.schemas.feedback import FeedbackOut
+
 
 class ChatRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -99,6 +101,8 @@ class MessageOut(BaseModel):
     retrieval_attempts: int | None = None
     trace_id: str | None = None
     explanation: dict[str, Any] | None = None
+    # Your own rating of this answer, if any.
+    feedback: FeedbackOut | None = None
 
 
 class ConversationDetail(ConversationOut):

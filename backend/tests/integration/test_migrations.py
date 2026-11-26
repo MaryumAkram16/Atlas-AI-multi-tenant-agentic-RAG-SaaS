@@ -26,6 +26,7 @@ TENANT_TABLES = [
     "evaluation_cases",
     "evaluation_runs",
     "evaluation_results",
+    "message_feedback",
 ]
 DB = "atlas_migration_check"
 

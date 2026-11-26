@@ -72,6 +72,10 @@ restricted document's ACL. Versions, chunks and jobs follow the document.
 | `evaluation_cases` | owner/admin | owner/admin | denied | owner/admin |
 | `evaluation_runs` | owner/admin | owner/admin, `created_by = self` | run creator (`status`, `metrics`, `error`, `finished_at`) | denied |
 | `evaluation_results` | owner/admin, and run creator or every source document readable | run creator | denied | denied |
+| `message_feedback` | author, or owner/admin | author, on an assistant message in their own conversation | author (`rating`, `reason`, `comment`) | author |
+
+Feedback copies the question (not the answer) so owners/admins can review it; the UI
+says so before a comment is sent.
 
 Runs execute as the requesting user, so they only search that user's readable
 documents. Stored answers follow the chat revocation rule in RLS.

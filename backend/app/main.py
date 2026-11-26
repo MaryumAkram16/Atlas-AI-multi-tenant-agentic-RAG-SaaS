@@ -16,6 +16,7 @@ from app.api.documents import files_router
 from app.api.documents import router as documents_router
 from app.api.errors import install_error_handlers
 from app.api.evaluations import router as evaluations_router
+from app.api.feedback import router as feedback_router
 from app.api.health import router as health_router
 from app.api.organizations import router as organizations_router
 from app.auth.jwt import JWTVerifier
@@ -88,5 +89,6 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(chat_router)
     app.include_router(admin_router)
     app.include_router(evaluations_router)
+    app.include_router(feedback_router)
     app.include_router(files_router)
     return app
