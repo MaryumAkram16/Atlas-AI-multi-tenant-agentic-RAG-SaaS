@@ -17,3 +17,13 @@ The rules (from CLAUDE.md) and where each is enforced and tested. Details:
 The security suite (`backend/tests/security`) runs as its own CI step,
 separate from AI quality evaluation. These are tested design properties, not
 an external security audit.
+
+## "Why this answer?" explanations
+
+Each answer stores an explanation built from the final agent state: search
+queries (from the question, never from documents), evidence strength, titles
+and versions of documents the asker could read, conflict resolutions, the
+citation check (problem types and counts only, not the flagged text) and the
+abstention reason. It holds no document text, and it is hidden together with
+the answer when any source becomes unreadable (tested in
+`tests/integration/test_explanation.py`).

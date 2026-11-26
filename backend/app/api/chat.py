@@ -87,6 +87,7 @@ async def chat(body: ChatRequest, request: Request, ctx: Org, db: DB):
         retrieval=done["retrieval"],
         usage=done["usage"],
         latency_ms=done["latency_ms"],
+        explanation=done.get("explanation"),
     )
 
 
@@ -121,6 +122,7 @@ async def get_conversation(conversation_id: UUID, ctx: Org, db: DB) -> Conversat
             conflicts=[] if redacted else meta.get("conflicts", []),
             retrieval_attempts=meta.get("retrieval_attempts"),
             trace_id=meta.get("trace_id"),
+            explanation=None if redacted else meta.get("explanation"),
         )
 
     return ConversationDetail(**conv, messages=[message(m) for m in messages])

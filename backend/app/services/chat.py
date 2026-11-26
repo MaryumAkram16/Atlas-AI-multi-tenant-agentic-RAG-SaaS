@@ -30,6 +30,7 @@ from app.retrieval.authorize import SearchScope, allowed_documents
 from app.retrieval.hybrid import HybridRetriever
 from app.services import limits
 from app.services.answering import Evidence, parse_citations
+from app.services.explain import build_explanation
 from app.services.llm import ChatLLM, Usage
 
 logger = logging.getLogger(__name__)
@@ -217,6 +218,7 @@ async def run(
         "retrieval_attempts": state.get("attempts", 0),
         "steps": state.get("steps", 0),
     }
+    explanation = build_explanation(state, cited, has_documents=bool(prepared.scope.version_ids))
     stats = {
         "candidates": len(state.get("candidates") or []),
         "authorized": state.get("authorized_count", 0),
@@ -243,6 +245,7 @@ async def run(
                 "model": llm.name,
                 "trace": state.get("trace", []),
                 "verification": state.get("verification"),
+                "explanation": explanation,
                 # Every document the answer was generated from: if any becomes
                 # unreadable, the stored answer is hidden (revocation).
                 "source_document_ids": sorted({str(e.document_id) for e in answer_evidence}),
@@ -279,5 +282,6 @@ async def run(
             "retrieval": stats,
             "usage": usage.__dict__ if usage else None,
             "latency_ms": latency_ms,
+            "explanation": explanation,
         },
     )

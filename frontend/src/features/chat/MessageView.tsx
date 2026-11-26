@@ -1,5 +1,6 @@
 import { Badge, STATUS_TONE, formatDate } from "../../components/ui";
 import type { ChatMessage, Citation, Conflict } from "../../services/types";
+import { WhyPanel } from "./WhyPanel";
 
 /** Render answer text with [n] markers turned into clickable citation chips. */
 export function AnswerText({ text, citations, onCite }: {
@@ -77,6 +78,7 @@ export function MessageView({ message, onCite }: { message: ChatMessage; onCite:
         <AnswerText text={message.content} citations={message.citations} onCite={onCite} />
       )}
       <ConflictPanel conflicts={message.conflicts} />
+      {message.explanation && <WhyPanel explanation={message.explanation} />}
       {message.citations.length > 0 && (
         <ol className="sources" aria-label="Sources">
           {message.citations.map((c) => (

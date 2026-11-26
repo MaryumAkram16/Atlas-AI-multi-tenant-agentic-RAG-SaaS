@@ -140,6 +140,40 @@ export interface ChatMessage {
   retrieval_attempts?: number | null;
   trace_id?: string | null;
   created_at?: string;
+  explanation?: Explanation | null;
+}
+
+export interface Explanation {
+  intent: string | null;
+  standalone_question: string | null;
+  queries: { attempt: number; reason: string; after?: string | null; queries: string[] }[];
+  retrieval_attempts: number;
+  candidates: number;
+  authorized: number;
+  evidence_status: string | null;
+  evidence_reason: string | null;
+  injections_removed: number;
+  sources: {
+    document_id: string;
+    document_title: string;
+    version_id: string;
+    version: number;
+    effective_date: string | null;
+    passages: number;
+    cited: boolean;
+  }[];
+  set_aside: { title: string; status: string; reason: string | null }[];
+  precedence_notes: string[];
+  verification: {
+    checked: boolean;
+    ok: boolean;
+    partial: boolean;
+    problem_count: number;
+    problem_kinds: string[];
+  } | null;
+  corrections: number;
+  abstain_reason: string | null;
+  abstain_message: string | null;
 }
 
 export interface Conversation {

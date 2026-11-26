@@ -24,6 +24,9 @@ until the Cloud Run deployment in [docs/deployment.md](docs/deployment.md) is do
   citations and abstains when evidence is weak.
 - **Document sharing**: rename, change visibility, and share restricted
   documents with members (read or write); applies to the next question.
+- **"Why this answer?"**: every answer can show how Atlas searched (including
+  rewrites), which document versions it used or set aside and why, the citation
+  check, and why it abstained ([screenshot](docs/screenshots/why-this-answer.png)).
 - **In-product evaluations**: owners and admins build question sets from their
   own documents and benchmark the agent (facts, abstention, citations, latency).
 - **Admin pages**: usage and plan limits, the audit log, and evaluation runs

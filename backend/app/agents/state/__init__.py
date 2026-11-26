@@ -49,6 +49,8 @@ class AgentState(TypedDict, total=False):
     intent: str
     plan: dict[str, Any]
     search_queries: list[str]
+    # Every set of search queries tried, and why (for "Why this answer?").
+    query_log: list[dict[str, Any]]
     standalone_question: str | None
     attempts: int
     candidates: list[tuple[UUID, float]]

@@ -1,5 +1,5 @@
 from datetime import date, datetime
-from typing import Annotated, Literal
+from typing import Annotated, Any, Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints
@@ -76,6 +76,8 @@ class ChatResponse(BaseModel):
     retrieval: RetrievalStats
     usage: UsageOut | None
     latency_ms: int
+    # "Why this answer?": decisions and source versions, never document text.
+    explanation: dict[str, Any] | None = None
 
 
 class ConversationOut(BaseModel):
@@ -96,6 +98,7 @@ class MessageOut(BaseModel):
     conflicts: list[Conflict] = []
     retrieval_attempts: int | None = None
     trace_id: str | None = None
+    explanation: dict[str, Any] | None = None
 
 
 class ConversationDetail(ConversationOut):

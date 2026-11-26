@@ -81,6 +81,13 @@ test("new user: sign up, create org, invite, upload, chat with citations", async
   await expect(answer).toContainText("7 days", { timeout: 60_000 });
   await expect(answer.getByLabel("Sources")).toContainText("refund-policy-2026");
 
+  // "Why this answer?" shows the search, versions and the citation check.
+  await answer.getByText("Why this answer?").click();
+  const why = answer.getByLabel("Why this answer");
+  await expect(why).toContainText("Searched with your question");
+  await expect(why).toContainText("refund-policy-2026 v1");
+  await expect(why).toContainText("Every claim was matched to a cited source.");
+
   // Clicking a citation opens the source preview with the cited text.
   await answer.locator("button.cite").first().click();
   const preview = memberPage.getByLabel("Source preview");
@@ -125,4 +132,6 @@ test("a question with no evidence shows the abstain state", async ({ page }) => 
   const answer = page.locator(".msg-assistant").last();
   await expect(answer).toHaveAttribute("data-status", "insufficient_evidence", { timeout: 60_000 });
   await expect(answer).toContainText("Not enough evidence");
+  await answer.getByText("Why this answer?").click();
+  await expect(answer.getByLabel("Why this answer")).toContainText("no documents you can read");
 });

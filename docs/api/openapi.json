@@ -321,6 +321,18 @@
             "title": "Evidence Status",
             "type": "string"
           },
+          "explanation": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Explanation"
+          },
           "latency_ms": {
             "title": "Latency Ms",
             "type": "integer"
@@ -1666,6 +1678,18 @@
               }
             ],
             "title": "Evidence Status"
+          },
+          "explanation": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Explanation"
           },
           "id": {
             "format": "uuid",

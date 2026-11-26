@@ -7,8 +7,7 @@ import { useAuth } from "../hooks/useAuth";
 import { apiRequest } from "../services/api";
 import { postSSE } from "../services/sse";
 import type {
-  AnswerStatus, ChatMessage, Citation, Conflict, Conversation, ConversationDetail, Organization,
-} from "../services/types";
+  AnswerStatus, ChatMessage, Citation, Conflict, Conversation, ConversationDetail, Organization, Explanation } from "../services/types";
 
 export const STEP_LABELS: Record<string, string> = {
   validate_context: "Checking access",
@@ -96,6 +95,7 @@ export function ChatPage() {
             evidence_status: data.evidence_status as string,
             retrieval_attempts: data.retrieval_attempts as number,
             trace_id: data.trace_id as string,
+            explanation: (data.explanation as Explanation | null) ?? null,
           });
         }
       }

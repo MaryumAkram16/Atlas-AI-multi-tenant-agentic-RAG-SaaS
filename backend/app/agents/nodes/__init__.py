@@ -140,7 +140,8 @@ async def decompose_query(state: AgentState, deps: AgentDeps) -> dict:
     subs = await deps.reasoner.decompose(base)
     ids = [*state["plan"]["exact_ids"], *(policy_ids(standalone) if standalone else [])]
     queries = list(dict.fromkeys([base, question, *subs, *ids]))
-    return {"search_queries": queries, "standalone_question": standalone}
+    log = [{"attempt": 1, "reason": "follow_up" if standalone else "original", "queries": queries}]
+    return {"search_queries": queries, "standalone_question": standalone, "query_log": log}
 
 
 def _questions(state: AgentState) -> list[str]:
@@ -248,7 +249,14 @@ async def assess_evidence(state: AgentState, deps: AgentDeps) -> dict:
 async def rewrite_query(state: AgentState, deps: AgentDeps) -> dict:
     base = state.get("standalone_question") or state["question"]
     rewritten = await deps.reasoner.rewrite(base, state.get("attempts", 0))
-    return {"search_queries": list(dict.fromkeys([rewritten, *state["plan"]["exact_ids"]]))}
+    queries = list(dict.fromkeys([rewritten, *state["plan"]["exact_ids"]]))
+    entry = {
+        "attempt": state.get("attempts", 0) + 1,
+        "reason": "rewrite",
+        "after": state.get("assessment_reason") or state.get("evidence_status"),
+        "queries": queries,
+    }
+    return {"search_queries": queries, "query_log": [*state.get("query_log", []), entry]}
 
 
 # ---------------------------------------------------------------- conflicts
