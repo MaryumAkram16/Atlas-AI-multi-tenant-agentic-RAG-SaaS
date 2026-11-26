@@ -204,7 +204,8 @@ async def citations_for(conn: AsyncConnection, message_ids: list[UUID]) -> list[
         """
         SELECT mc.message_id, mc.position, mc.chunk_id, mc.document_id,
                mc.document_version_id AS version_id, mc.page_start, mc.page_end, mc.section,
-               d.title AS document_title, v.version, v.effective_date
+               d.title AS document_title, v.version, v.effective_date,
+               (v.id = d.current_version_id) AS is_current
         FROM message_citations mc
         JOIN document_versions v ON v.id = mc.document_version_id
         JOIN documents d ON d.id = mc.document_id

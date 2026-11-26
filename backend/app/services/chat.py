@@ -81,7 +81,7 @@ async def prepare(
     )
 
 
-def citation_dict(position: int, ev: Evidence) -> dict[str, Any]:
+def citation_dict(position: int, ev: Evidence, current: frozenset = frozenset()) -> dict[str, Any]:
     return {
         "position": position,
         "chunk_id": ev.chunk_id,
@@ -93,6 +93,7 @@ def citation_dict(position: int, ev: Evidence) -> dict[str, Any]:
         "section": ev.section,
         "page_start": ev.page_start,
         "page_end": ev.page_end,
+        "is_current": ev.version_id in current if current else None,
     }
 
 
@@ -205,7 +206,8 @@ async def run(
     status = state.get("status") or "error"
     answer_evidence = state.get("answer_evidence") or []
     cited = parse_citations(answer, len(answer_evidence)) if status == "answered" else []
-    citations = [citation_dict(n, answer_evidence[n - 1]) for n in cited]
+    current = frozenset(prepared.scope.version_ids)
+    citations = [citation_dict(n, answer_evidence[n - 1], current) for n in cited]
     usage = _total_usage(llm.name, [*state.get("usage", []), *getattr(reasoner, "usage", [])])
     latency_ms = int((time.perf_counter() - started) * 1000)
     details = {

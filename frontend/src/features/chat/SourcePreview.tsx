@@ -38,6 +38,14 @@ export function SourcePreview({ orgId, citation, token, onClose }: {
         {citation.section && <> · {citation.section}</>}
         {citation.page_start && <> · page {citation.page_start}</>}
       </p>
+      {(chunk ? chunk.is_current === false : citation.is_current === false) && (
+        <p className="banner banner-info small" role="note">
+          Older version.{" "}
+          {chunk?.current_version
+            ? `Version ${chunk.current_version}${chunk.current_effective_date ? `, effective ${formatDate(chunk.current_effective_date)},` : ""} is now current.`
+            : "A newer version is now current."}
+        </p>
+      )}
       <ErrorBanner message={error} />
       {!chunk && !error && <Spinner />}
       {/* Rendered as plain text: document content is untrusted. */}

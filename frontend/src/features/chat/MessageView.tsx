@@ -92,6 +92,8 @@ export function MessageView({ message, onCite, footer }: {
                 <span className="cite">{c.position}</span>
                 <span>
                   {c.document_title} <span className="muted">v{c.version}</span>
+                  {c.is_current === false && <Badge tone="slate">older version</Badge>}
+                  {c.effective_date && <span className="muted small"> · effective {formatDate(c.effective_date)}</span>}
                   {c.section && <span className="muted small"> · {c.section}</span>}
                   {c.page_start && <span className="muted small"> · p. {c.page_start}{c.page_end && c.page_end !== c.page_start ? `–${c.page_end}` : ""}</span>}
                 </span>

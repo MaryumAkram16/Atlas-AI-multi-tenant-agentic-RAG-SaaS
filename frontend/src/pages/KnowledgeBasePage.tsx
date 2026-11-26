@@ -36,7 +36,8 @@ export function KnowledgeBasePage() {
     void load();
   }, [load]);
 
-  const busy = docs.some((d) => d.status === "processing" || d.status === "deleting");
+  const busy = docs.some((d) => d.status === "processing" || d.status === "deleting" ||
+    d.job_status === "queued" || d.job_status === "running");
   usePolling(() => {
     void load();
     if (open) void loadDetail(open.id).catch(() => setOpen(null));
@@ -91,7 +92,17 @@ export function KnowledgeBasePage() {
                     {d.title}
                     {d.visibility === "restricted" && <Badge tone="violet">restricted</Badge>}
                   </td>
-                  <td><Badge tone={STATUS_TONE[d.status]}>{d.status}</Badge></td>
+                  <td>
+                    <Badge tone={STATUS_TONE[shownStatus(d)]}>{shownStatus(d)}</Badge>
+                    {shownStatus(d) === "failed" && can.editDocument(org.role, userId ?? "", d) && (
+                      <button className="btn btn-ghost small" aria-label={`Retry ${d.title}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          void act(() => apiRequest(`${base}/${d.id}/reindex`, token, { method: "POST" }),
+                            "Retrying. Indexing has started again.");
+                        }}>Retry</button>
+                    )}
+                  </td>
                   <td>{d.current_version ? `v${d.current_version.version}` : "—"}</td>
                   <td>{formatDate(d.current_version?.effective_date)}</td>
                   <td>{d.current_version?.chunk_count ?? "—"}</td>
@@ -129,6 +140,15 @@ export function KnowledgeBasePage() {
       )}
     </section>
   );
+}
+
+/** The document's status, refined by its latest indexing job: "queued" while
+ * the job waits for the worker, "processing" while it runs (also on retry). */
+export function shownStatus(d: DocumentItem): string {
+  if (d.status === "deleting") return d.status;
+  if (d.job_status === "queued") return "queued";
+  if (d.job_status === "running") return "processing";
+  return d.status;
 }
 
 function UploadForm({ onUpload }: { onUpload: (form: FormData) => Promise<void> }) {

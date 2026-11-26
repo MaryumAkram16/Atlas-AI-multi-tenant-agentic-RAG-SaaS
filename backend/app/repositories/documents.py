@@ -35,7 +35,10 @@ async def get_document(conn: AsyncConnection, org_id: UUID, document_id: UUID) -
         conn,
         """
         SELECT id, organization_id, owner_id, title, visibility, status, created_at,
-               updated_at, current_version_id, app_private.document_access(id) AS access
+               updated_at, current_version_id, app_private.document_access(id) AS access,
+               (SELECT j.status FROM ingestion_jobs j
+                WHERE j.document_id = documents.id AND j.kind IN ('ingest', 'reindex')
+                ORDER BY j.created_at DESC, j.id DESC LIMIT 1) AS job_status
         FROM documents
         WHERE organization_id = %s AND id = %s
         """,
@@ -48,7 +51,10 @@ async def list_documents(conn: AsyncConnection, org_id: UUID) -> list[Row]:
         conn,
         """
         SELECT id, organization_id, owner_id, title, visibility, status, created_at,
-               updated_at, current_version_id, app_private.document_access(id) AS access
+               updated_at, current_version_id, app_private.document_access(id) AS access,
+               (SELECT j.status FROM ingestion_jobs j
+                WHERE j.document_id = documents.id AND j.kind IN ('ingest', 'reindex')
+                ORDER BY j.created_at DESC, j.id DESC LIMIT 1) AS job_status
         FROM documents
         WHERE organization_id = %s
         ORDER BY created_at DESC, id
@@ -270,10 +276,13 @@ async def get_chunk(
         """
         SELECT c.id AS chunk_id, c.document_id, d.title AS document_title,
                c.document_version_id AS version_id, v.version, v.effective_date,
-               c.section, c.page_start, c.page_end, c.content
+               c.section, c.page_start, c.page_end, c.content,
+               (v.id = d.current_version_id) AS is_current,
+               cur.version AS current_version, cur.effective_date AS current_effective_date
         FROM document_chunks c
         JOIN document_versions v ON v.id = c.document_version_id
         JOIN documents d ON d.id = c.document_id
+        LEFT JOIN document_versions cur ON cur.id = d.current_version_id
         WHERE c.organization_id = %s AND c.document_id = %s AND c.id = %s
         """,
         (org_id, document_id, chunk_id),

@@ -403,6 +403,29 @@
             "title": "Content",
             "type": "string"
           },
+          "current_effective_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Effective Date"
+          },
+          "current_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Version"
+          },
           "document_id": {
             "format": "uuid",
             "title": "Document Id",
@@ -423,6 +446,11 @@
               }
             ],
             "title": "Effective Date"
+          },
+          "is_current": {
+            "default": true,
+            "title": "Is Current",
+            "type": "boolean"
           },
           "page_end": {
             "anyOf": [
@@ -509,6 +537,17 @@
               }
             ],
             "title": "Effective Date"
+          },
+          "is_current": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Current"
           },
           "page_end": {
             "anyOf": [
@@ -944,6 +983,17 @@
             "title": "Id",
             "type": "string"
           },
+          "job_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Job Status"
+          },
           "organization_id": {
             "format": "uuid",
             "title": "Organization Id",
@@ -1033,6 +1083,17 @@
             "format": "uuid",
             "title": "Id",
             "type": "string"
+          },
+          "job_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Job Status"
           },
           "organization_id": {
             "format": "uuid",

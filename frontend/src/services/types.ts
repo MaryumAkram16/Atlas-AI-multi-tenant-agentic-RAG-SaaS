@@ -61,6 +61,8 @@ export interface DocumentItem {
   updated_at: string;
   /** The caller's own access, decided by Postgres. */
   access?: DocumentAccess | null;
+  /** Latest ingest/reindex job: queued | running | succeeded | failed. */
+  job_status?: "queued" | "running" | "succeeded" | "failed" | null;
   current_version: Version | null;
   versions?: Version[];
 }
@@ -103,6 +105,8 @@ export interface Citation {
   section: string | null;
   page_start: number | null;
   page_end: number | null;
+  /** False when a newer version of the document is now current. */
+  is_current?: boolean | null;
 }
 
 export interface ConflictDocument {
@@ -217,6 +221,9 @@ export interface ChunkPreview {
   page_start: number | null;
   page_end: number | null;
   content: string;
+  is_current?: boolean;
+  current_version?: number | null;
+  current_effective_date?: string | null;
 }
 
 export interface UsageTotals {

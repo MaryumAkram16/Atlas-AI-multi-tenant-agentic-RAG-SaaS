@@ -28,6 +28,8 @@ class Citation(BaseModel):
     section: str | None
     page_start: int | None
     page_end: int | None
+    # False when the cited version is no longer the document's current one.
+    is_current: bool | None = None
 
 
 class RetrievalStats(BaseModel):

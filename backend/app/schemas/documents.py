@@ -35,6 +35,8 @@ class DocumentOut(BaseModel):
     updated_at: datetime
     # The caller's own access ("read" or "write"), decided by Postgres.
     access: Permission | None = None
+    # Latest ingest/reindex job: queued | running | succeeded | failed.
+    job_status: str | None = None
     current_version: VersionOut | None = None
 
 
@@ -75,6 +77,9 @@ class ChunkPreview(BaseModel):
     page_start: int | None
     page_end: int | None
     content: str
+    is_current: bool = True
+    current_version: int | None = None
+    current_effective_date: date | None = None
 
 
 class DownloadUrl(BaseModel):
