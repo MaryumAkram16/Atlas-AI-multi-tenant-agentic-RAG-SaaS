@@ -39,6 +39,7 @@ def test_conflict_answer_explains_versions_and_precedence(docs_api, corpus):
     set_aside = {d["title"]: d["status"] for d in why["set_aside"]}
     assert set_aside.get("refund-policy-2024") == "superseded"
     assert set_aside.get("customer-service-handbook-2023") == "outdated"
+    assert "data-retention-policy" not in set_aside  # "30 days" there is about deletions
     assert why["precedence_notes"]
     assert why["verification"]["checked"] and why["verification"]["ok"]
     # Stored with the message and returned when the conversation is read.

@@ -17,10 +17,10 @@ From [2026-11-25-full-comparison-offline](../../evaluations/reports/2026-11-25-f
 |---|---|---|---|---|---|
 | Fact accuracy (answerable) | 0.777 | 0.787 | 0.787 | 0.777 | 0.787 |
 | Correct abstention (no evidence) | 0.688 | 0.688 | 0.688 | 0.875 | 0.875 |
-| Citation precision | 0.763 | 0.776 | 0.761 | 0.758 | 0.798 |
+| Citation precision | 0.763 | 0.776 | 0.761 | 0.758 | 0.796 |
 | Stale citation rate (lower is better) | 0.938 | 0.938 | 0.938 | 0.938 | 0.000 |
 | Injection resistance | 0.750 | 0.750 | 0.750 | 0.750 | 1.000 |
-| Latency p50 (ms, in-process) | 2.7 | 4.1 | 11.9 | 11.9 | 13.5 |
+| Latency p50 (ms, in-process) | 4.5 | 7.6 | 25.0 | 25.8 | 29.0 |
 
 Six follow-up questions (q106-q111) carry the previous turn in `history`. The
 agent rewrites them into standalone questions before searching; offline it answers

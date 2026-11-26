@@ -104,16 +104,39 @@ def facts(text: str) -> set[tuple[str, str]]:
     return out
 
 
+_SENTENCE = re.compile(r"(?<=[.!?])\s+|\n{2,}")
+
+
+def on_topic_facts(ev: Evidence, question_terms: set[str]) -> set[tuple[str, str]]:
+    """Figures from sentences about the question's topic.
+
+    A sentence counts when its section heading is about the question's topic,
+    or when the sentence and heading together share at least two of the
+    question's topic terms (all of them when there are fewer). One common word
+    is not enough: "Customer deletion requests ... within 30 days" is not about
+    a customer's refund.
+    """
+    if not question_terms:
+        return facts(ev.content)
+    needed = min(2, len(question_terms))
+    heading = question_terms & term_set(ev.section or "")
+    out: set[tuple[str, str]] = set()
+    for sentence in _SENTENCE.split(ev.content):
+        found = facts(sentence)
+        if not found:
+            continue
+        if heading or len(question_terms & term_set(sentence)) >= needed:
+            out |= found
+    return out
+
+
 def detect_conflicts(
     evidence: list[Evidence], metas: dict[UUID, DocMeta], question_terms: set[str]
 ) -> list[Conflict]:
     """Group documents whose on-topic evidence gives different values in the same unit."""
     by_doc: dict[UUID, set[tuple[str, str]]] = {}
     for ev in evidence:
-        text = f"{ev.section or ''} {ev.content}"
-        if question_terms and not (question_terms & term_set(text)):
-            continue  # off-topic chunk
-        by_doc.setdefault(ev.document_id, set()).update(facts(ev.content))
+        by_doc.setdefault(ev.document_id, set()).update(on_topic_facts(ev, question_terms))
     docs = [d for d, f in by_doc.items() if f]
     # Union-find over documents that disagree in some unit.
     parent = {d: d for d in docs}

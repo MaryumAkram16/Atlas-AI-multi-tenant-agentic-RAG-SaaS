@@ -125,3 +125,19 @@ def test_same_values_or_off_topic_are_not_conflicts():
     c = ev("c", "Laptops must use encryption within 30 days.", date(2025, 1, 1), "Devices")
     m[c.document_id] = parse_meta(c, "", [])
     assert detect_conflicts([a, c], m, salient_terms("refund")) == []
+
+
+def test_one_shared_common_word_is_not_a_conflict():
+    """A figure about something else must not join the refund conflict."""
+    retention = ev(
+        "data-retention",
+        "Customer deletion requests are completed within 30 days of verification.",
+        date(2025, 5, 1),
+        "Acme Data Retention Policy > Deletion requests",
+    )
+    evidence = [R24, R26, PREM, HB, retention]
+    m = metas(*evidence)
+    q = "A premium customer bought something 8 days ago. Can they still get a refund?"
+    (conflict,) = detect_conflicts(evidence, m, salient_terms(q))
+    assert retention.document_id not in {d.document_id for d in conflict.documents}
+    assert HB.document_id in {d.document_id for d in conflict.documents}
