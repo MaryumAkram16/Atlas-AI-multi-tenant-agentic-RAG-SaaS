@@ -87,6 +87,10 @@ class Settings(BaseSettings):
     agent_max_rewrites: int = Field(default=2, ge=0, le=5)
     agent_max_corrections: int = Field(default=1, ge=0, le=3)
     agent_timeout_seconds: float = Field(default=45, gt=0)
+    # Planning/assessment/rewrites: "auto" uses the LLM when one is configured;
+    # "heuristic" keeps them rule-based so only the answer calls the model
+    # (fewer, faster calls; useful with slow or rate-limited models).
+    agent_reasoner: Literal["auto", "llm", "heuristic"] = "auto"
     agent_max_evidence_tokens: int = Field(default=6000, ge=500)
     agent_sufficient_coverage: float = Field(default=0.6, gt=0, le=1)
     # Stage switches, used by the ablation benchmark (all on in production).

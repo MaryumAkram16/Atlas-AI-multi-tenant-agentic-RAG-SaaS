@@ -67,6 +67,8 @@ stored as `OPENAI_API_KEY`), and set:
 | `LLM_MODEL` | a current Gemini Flash model: `gemini-3.8-flash` (verified 2026-11-27; older ones are retired for new keys) |
 | `LLM_REASONING_EFFORT` | `low` (Gemini models "think" first; the agent already plans) |
 | `LLM_MAX_TOKENS` | `2048` (thinking tokens can count toward the limit) |
+| `AGENT_REASONER` | `heuristic` (planning and evidence checks without the model: one model call per answer instead of 4-7) |
+| `AGENT_TIMEOUT_SECONDS` | `120` (thinking models are slower; Cloud Run allows up to 300) |
 | `EMBEDDING_MODEL` | `gemini-embedding-001` (verified to return 1536 dimensions) |
 | `EMBEDDING_DIMENSIONS` | `1536` (keep it fixed: the Qdrant collection is created with this size) |
 

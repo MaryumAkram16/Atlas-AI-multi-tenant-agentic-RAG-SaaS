@@ -118,7 +118,10 @@ def _cost(settings: Settings, usage: Usage | None) -> Decimal | None:
 
 
 def build_reasoner(settings: Settings, llm: ChatLLM):
-    if settings.llm_provider == "openai":
+    use_llm = settings.agent_reasoner == "llm" or (
+        settings.agent_reasoner == "auto" and settings.llm_provider == "openai"
+    )
+    if use_llm:
         return LLMReasoner(llm, settings.agent_sufficient_coverage)
     return HeuristicReasoner(settings.agent_sufficient_coverage)
 
