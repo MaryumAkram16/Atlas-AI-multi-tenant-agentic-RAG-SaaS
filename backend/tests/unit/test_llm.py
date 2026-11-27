@@ -122,3 +122,46 @@ def test_thinking_tokens_count_as_output():
     }
     assert usage_from("m", openai) == Usage("m", prompt_tokens=5, completion_tokens=40)
     assert usage_from("m", {"prompt_tokens": 2, "completion_tokens": 1}).completion_tokens == 1
+
+
+@pytest.mark.asyncio
+async def test_busy_provider_is_retried_before_streaming():
+    calls = {"n": 0}
+    ok = 'data: {"choices": [{"delta": {"content": "Hi"}}]}\n\ndata: [DONE]\n\n'
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls["n"] += 1
+        if calls["n"] < 3:
+            return httpx.Response(503, json={"error": "high demand"})
+        return httpx.Response(200, content=ok.encode())
+
+    llm = OpenAIChatLLM(
+        api_key="k",
+        model="m",
+        max_tokens=10,
+        retry_base_delay=0,
+        client=httpx.AsyncClient(transport=httpx.MockTransport(handler)),
+    )
+    text, _ = await collect(llm.stream([{"role": "user", "content": "q"}]))
+    assert text == "Hi" and calls["n"] == 3
+
+
+@pytest.mark.asyncio
+async def test_retries_are_bounded_and_other_errors_fail_fast():
+    for status, expected_calls in ((503, 4), (400, 1)):
+        calls = {"n": 0}
+
+        def handler(request: httpx.Request, status=status, calls=calls) -> httpx.Response:
+            calls["n"] += 1
+            return httpx.Response(status)
+
+        llm = OpenAIChatLLM(
+            api_key="k",
+            model="m",
+            max_tokens=10,
+            retry_base_delay=0,
+            client=httpx.AsyncClient(transport=httpx.MockTransport(handler)),
+        )
+        with pytest.raises(RuntimeError, match=str(status)):
+            await collect(llm.stream([{"role": "user", "content": "q"}]))
+        assert calls["n"] == expected_calls

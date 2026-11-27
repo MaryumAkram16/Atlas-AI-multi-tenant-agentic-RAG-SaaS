@@ -2,12 +2,14 @@
 
 import hashlib
 import math
+import time
 from typing import Protocol
 
 import httpx
 
 from app.config import Settings
 from app.retrieval.sparse import tokenize
+from app.services.retry import RETRYABLE_STATUS, backoff
 
 
 class Embedder(Protocol):
@@ -45,7 +47,11 @@ class OpenAIEmbedder:
         base_url: str = "https://api.openai.com/v1",
         batch_size: int = 64,
         client: httpx.Client | None = None,
+        max_retries: int = 3,
+        retry_base_delay: float = 1.0,
     ) -> None:
+        self._max_retries = max_retries
+        self._retry_base = retry_base_delay
         self.dimensions = dimensions
         self._model = model
         self._url = f"{base_url.rstrip('/')}/embeddings"
@@ -57,11 +63,12 @@ class OpenAIEmbedder:
         vectors: list[list[float]] = []
         for i in range(0, len(texts), self._batch):
             batch = texts[i : i + self._batch]
-            resp = self._client.post(
-                self._url,
-                json={"model": self._model, "input": batch, "dimensions": self.dimensions},
-                headers=self._headers,
-            )
+            payload = {"model": self._model, "input": batch, "dimensions": self.dimensions}
+            for attempt in range(self._max_retries + 1):
+                resp = self._client.post(self._url, json=payload, headers=self._headers)
+                if resp.status_code not in RETRYABLE_STATUS or attempt == self._max_retries:
+                    break
+                time.sleep(backoff(attempt + 1, self._retry_base, resp.headers.get("retry-after")))
             if resp.status_code >= 400:
                 # Status only: response bodies can echo input text.
                 raise RuntimeError(f"embedding request failed with status {resp.status_code}")

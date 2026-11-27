@@ -1,5 +1,6 @@
 """Chat model providers behind one streaming interface (replaceable)."""
 
+import asyncio
 import json
 import re
 from collections.abc import AsyncIterator
@@ -11,6 +12,7 @@ import httpx
 from app.config import Settings
 from app.retrieval.sparse import tokenize
 from app.services.answering import INSUFFICIENT_EVIDENCE_ANSWER
+from app.services.retry import RETRYABLE_STATUS, backoff
 
 
 @dataclass(frozen=True)
@@ -60,7 +62,11 @@ class OpenAIChatLLM:
         timeout: float = 60,
         reasoning_effort: str | None = None,
         client: httpx.AsyncClient | None = None,
+        max_retries: int = 3,
+        retry_base_delay: float = 1.0,
     ) -> None:
+        self._max_retries = max_retries
+        self._retry_base = retry_base_delay
         self.name = model
         self._reasoning_effort = reasoning_effort
         self._url = f"{base_url.rstrip('/')}/chat/completions"
@@ -81,25 +87,37 @@ class OpenAIChatLLM:
             # Thinking models (e.g. Gemini, OpenAI o-series): keep thinking short;
             # the agent already plans retrieval.
             payload["reasoning_effort"] = self._reasoning_effort
-        async with self._client.stream(
-            "POST", self._url, json=payload, headers=self._headers
-        ) as resp:
-            if resp.status_code >= 400:
-                # Status only: bodies can echo prompt (document) text.
-                raise RuntimeError(f"chat completion failed with status {resp.status_code}")
-            async for line in resp.aiter_lines():
-                if not line.startswith("data: "):
+        for attempt in range(self._max_retries + 1):
+            async with self._client.stream(
+                "POST", self._url, json=payload, headers=self._headers
+            ) as resp:
+                if resp.status_code in RETRYABLE_STATUS and attempt < self._max_retries:
+                    # Busy or rate limited, and nothing streamed yet: try again.
+                    wait = backoff(attempt + 1, self._retry_base, resp.headers.get("retry-after"))
+                    await resp.aclose()
+                    await asyncio.sleep(wait)
                     continue
-                data = line[6:].strip()
-                if data == "[DONE]":
-                    break
-                chunk = json.loads(data)
-                for choice in chunk.get("choices") or []:
-                    text = (choice.get("delta") or {}).get("content")
-                    if text:
-                        yield TextDelta(text)
-                if usage := chunk.get("usage"):
-                    yield usage_from(self.name, usage)
+                if resp.status_code >= 400:
+                    # Status only: bodies can echo prompt (document) text.
+                    raise RuntimeError(f"chat completion failed with status {resp.status_code}")
+                async for event in self._events(resp):
+                    yield event
+                return
+
+    async def _events(self, resp: httpx.Response) -> AsyncIterator[LLMEvent]:
+        async for line in resp.aiter_lines():
+            if not line.startswith("data: "):
+                continue
+            data = line[6:].strip()
+            if data == "[DONE]":
+                break
+            chunk = json.loads(data)
+            for choice in chunk.get("choices") or []:
+                text = (choice.get("delta") or {}).get("content")
+                if text:
+                    yield TextDelta(text)
+            if usage := chunk.get("usage"):
+                yield usage_from(self.name, usage)
 
 
 _SOURCE = re.compile(r'<source id="(\d+)"[^>]*>(.*?)</source>', re.DOTALL)
