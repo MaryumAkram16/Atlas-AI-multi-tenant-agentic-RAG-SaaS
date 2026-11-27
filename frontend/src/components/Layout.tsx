@@ -2,6 +2,7 @@ import { NavLink, Outlet, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { useOrgs } from "../hooks/useOrgs";
 import { can } from "../services/permissions";
+import { ThemeToggle } from "./ThemeToggle";
 import { Badge } from "./ui";
 
 export function Logo() {
@@ -58,6 +59,7 @@ export function Layout() {
           <span className="muted small" title={email ?? ""}>
             {isAnonymous ? "Demo visitor" : email}
           </span>
+          <ThemeToggle />
           <button className="btn btn-ghost" onClick={() => void signOut()}>
             Sign out
           </button>
