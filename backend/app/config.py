@@ -75,6 +75,8 @@ class Settings(BaseSettings):
     llm_provider: Literal["openai", "extractive"] = "openai"
     llm_model: str = "gpt-4o-mini"
     llm_max_tokens: int = Field(default=800, ge=16)
+    # For thinking models only (e.g. "low" for Gemini); unset for gpt-4o-mini.
+    llm_reasoning_effort: str | None = None
     llm_timeout_seconds: float = Field(default=60, gt=0)
     # Optional prices (USD per 1M tokens) for usage cost estimates; unset = no estimate.
     llm_input_price_per_1m: float | None = Field(default=None, ge=0)

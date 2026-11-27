@@ -64,9 +64,13 @@ stored as `OPENAI_API_KEY`), and set:
 | Variable | Value |
 |---|---|
 | `OPENAI_BASE_URL` | `https://generativelanguage.googleapis.com/v1beta/openai` |
-| `LLM_MODEL` | a current Gemini Flash model, e.g. `gemini-2.5-flash` |
-| `EMBEDDING_MODEL` | `gemini-embedding-001` |
+| `LLM_MODEL` | a current Gemini Flash model: `gemini-3.8-flash` (verified 2026-11-27; older ones are retired for new keys) |
+| `LLM_REASONING_EFFORT` | `low` (Gemini models "think" first; the agent already plans) |
+| `LLM_MAX_TOKENS` | `2048` (thinking tokens can count toward the limit) |
+| `EMBEDDING_MODEL` | `gemini-embedding-001` (verified to return 1536 dimensions) |
 | `EMBEDDING_DIMENSIONS` | `1536` (keep it fixed: the Qdrant collection is created with this size) |
+
+Thinking tokens are counted as output tokens in usage and cost.
 
 Choose the embedding model before uploading documents; switching later means
 reindexing everything.

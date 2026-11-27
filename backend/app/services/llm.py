@@ -34,6 +34,21 @@ class ChatLLM(Protocol):
     def stream(self, messages: list[dict[str, str]]) -> AsyncIterator[LLMEvent]: ...
 
 
+def usage_from(model: str, usage: dict) -> Usage:
+    """Token usage, counting hidden "thinking" tokens as output (they are
+    billed as output). Some providers report them only in total_tokens."""
+    prompt = int(usage.get("prompt_tokens") or 0)
+    completion = int(usage.get("completion_tokens") or 0)
+    details = usage.get("completion_tokens_details") or {}
+    reasoning = int(details.get("reasoning_tokens") or 0)
+    if reasoning and completion < reasoning:
+        completion += reasoning  # reported separately from the visible answer
+    total = int(usage.get("total_tokens") or 0)
+    if total > prompt + completion:
+        completion = total - prompt
+    return Usage(model=model, prompt_tokens=prompt, completion_tokens=completion)
+
+
 class OpenAIChatLLM:
     def __init__(
         self,
@@ -43,9 +58,11 @@ class OpenAIChatLLM:
         max_tokens: int,
         base_url: str = "https://api.openai.com/v1",
         timeout: float = 60,
+        reasoning_effort: str | None = None,
         client: httpx.AsyncClient | None = None,
     ) -> None:
         self.name = model
+        self._reasoning_effort = reasoning_effort
         self._url = f"{base_url.rstrip('/')}/chat/completions"
         self._max_tokens = max_tokens
         self._client = client or httpx.AsyncClient(timeout=timeout)
@@ -60,6 +77,10 @@ class OpenAIChatLLM:
             "stream": True,
             "stream_options": {"include_usage": True},
         }
+        if self._reasoning_effort:
+            # Thinking models (e.g. Gemini, OpenAI o-series): keep thinking short;
+            # the agent already plans retrieval.
+            payload["reasoning_effort"] = self._reasoning_effort
         async with self._client.stream(
             "POST", self._url, json=payload, headers=self._headers
         ) as resp:
@@ -78,11 +99,7 @@ class OpenAIChatLLM:
                     if text:
                         yield TextDelta(text)
                 if usage := chunk.get("usage"):
-                    yield Usage(
-                        model=self.name,
-                        prompt_tokens=usage.get("prompt_tokens", 0),
-                        completion_tokens=usage.get("completion_tokens", 0),
-                    )
+                    yield usage_from(self.name, usage)
 
 
 _SOURCE = re.compile(r'<source id="(\d+)"[^>]*>(.*?)</source>', re.DOTALL)
@@ -144,4 +161,5 @@ def build_llm(settings: Settings) -> ChatLLM:
         max_tokens=settings.llm_max_tokens,
         base_url=settings.openai_base_url,
         timeout=settings.llm_timeout_seconds,
+        reasoning_effort=settings.llm_reasoning_effort,
     )

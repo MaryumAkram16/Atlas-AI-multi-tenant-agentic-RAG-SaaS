@@ -3,7 +3,7 @@ import json
 import httpx
 import pytest
 
-from app.services.llm import ExtractiveLLM, OpenAIChatLLM, TextDelta, Usage
+from app.services.llm import ExtractiveLLM, OpenAIChatLLM, TextDelta, Usage, usage_from
 
 
 async def collect(stream):
@@ -58,6 +58,7 @@ async def test_openai_streaming_parses_deltas_and_usage():
         payload = json.loads(request.content)
         assert payload["stream"] is True and payload["stream_options"] == {"include_usage": True}
         assert payload["model"] == "gpt-test" and payload["temperature"] == 0
+        assert "reasoning_effort" not in payload  # not sent unless configured
         return httpx.Response(
             200, content=body.encode(), headers={"content-type": "text/event-stream"}
         )
@@ -87,3 +88,37 @@ async def test_openai_error_status_raises_without_body():
     with pytest.raises(RuntimeError) as exc:
         await collect(llm.stream([{"role": "user", "content": "q"}]))
     assert "500" in str(exc.value) and "document text" not in str(exc.value)
+
+
+@pytest.mark.asyncio
+async def test_reasoning_effort_is_sent_when_configured():
+    seen = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.update(json.loads(request.content))
+        return httpx.Response(200, content=b"data: [DONE]\n\n")
+
+    llm = OpenAIChatLLM(
+        api_key="k",
+        model="gemini-test",
+        max_tokens=100,
+        reasoning_effort="low",
+        client=httpx.AsyncClient(transport=httpx.MockTransport(handler)),
+    )
+    await collect(llm.stream([{"role": "user", "content": "q"}]))
+    assert seen["reasoning_effort"] == "low"
+
+
+def test_thinking_tokens_count_as_output():
+    # Gemini: thinking appears only in total_tokens (13 visible, 150 total).
+    gemini = {"prompt_tokens": 3, "completion_tokens": 10, "total_tokens": 150}
+    assert usage_from("m", gemini) == Usage("m", prompt_tokens=3, completion_tokens=147)
+    # OpenAI o-series: reasoning tokens are part of completion_tokens already.
+    openai = {
+        "prompt_tokens": 5,
+        "completion_tokens": 40,
+        "total_tokens": 45,
+        "completion_tokens_details": {"reasoning_tokens": 30},
+    }
+    assert usage_from("m", openai) == Usage("m", prompt_tokens=5, completion_tokens=40)
+    assert usage_from("m", {"prompt_tokens": 2, "completion_tokens": 1}).completion_tokens == 1

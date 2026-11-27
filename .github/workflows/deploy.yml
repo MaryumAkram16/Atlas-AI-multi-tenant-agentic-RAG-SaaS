@@ -61,6 +61,8 @@ jobs:
           OPENAI_BASE_URL: ${{ vars.OPENAI_BASE_URL }}
           EMBEDDING_MODEL: ${{ vars.EMBEDDING_MODEL }}
           EMBEDDING_DIMENSIONS: ${{ vars.EMBEDDING_DIMENSIONS }}
+          LLM_REASONING_EFFORT: ${{ vars.LLM_REASONING_EFFORT }}
+          LLM_MAX_TOKENS: ${{ vars.LLM_MAX_TOKENS }}
         run: |
           python3 - <<'PY'
           import json, os
@@ -82,7 +84,8 @@ jobs:
               "TOKENIZER": "tiktoken",
           }
           for key in ("LLM_INPUT_PRICE_PER_1M", "LLM_OUTPUT_PRICE_PER_1M", "OPENAI_BASE_URL",
-                      "EMBEDDING_MODEL", "EMBEDDING_DIMENSIONS"):
+                      "EMBEDDING_MODEL", "EMBEDDING_DIMENSIONS", "LLM_REASONING_EFFORT",
+                      "LLM_MAX_TOKENS"):
               if os.environ.get(key):
                   env[key] = os.environ[key]
           with open("runtime-env.yaml", "w") as f:
