@@ -9,7 +9,7 @@ import httpx
 
 from app.config import Settings
 from app.retrieval.sparse import tokenize
-from app.services.retry import RETRYABLE_STATUS, backoff
+from app.services.retry import RETRYABLE_STATUS, ProviderError, backoff
 
 
 class Embedder(Protocol):
@@ -83,7 +83,7 @@ class OpenAIEmbedder:
                 time.sleep(backoff(attempt + 1, self._retry_base, resp.headers.get("retry-after")))
             if resp.status_code >= 400:
                 # Status only: response bodies can echo input text.
-                raise RuntimeError(f"embedding request failed with status {resp.status_code}")
+                raise ProviderError("embedding request", resp.status_code)
             vectors.extend(_ordered_embeddings(resp.json().get("data") or [], len(batch)))
         return vectors
 

@@ -199,7 +199,13 @@ async def run(
         logger.error("agent context violation trace_id=%s", trace_id)
         state = {"status": "error", "answer": "The answer could not be generated."}
     except Exception as exc:
-        logger.warning("agent failed: %s trace_id=%s", type(exc).__name__, trace_id)
+        status = getattr(exc, "status", None)  # provider HTTP status, never a body
+        logger.warning(
+            "agent failed: %s%s trace_id=%s",
+            type(exc).__name__,
+            f" provider_status={status}" if status else "",
+            trace_id,
+        )
         state = {
             "status": "error",
             "answer": "The answer could not be generated. Please try again.",
