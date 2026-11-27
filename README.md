@@ -6,9 +6,10 @@ Answers cite their sources, flag conflicting policy versions, and say so when
 the evidence isn't there. Each organization's data is isolated by Postgres
 row-level security, not just application code.
 
-**Live demo:** not deployed yet. The frontend is on Vercel
-(https://atlas-ai-lake-sigma.vercel.app) but is not connected to a hosted backend
-until the Cloud Run deployment in [docs/deployment.md](docs/deployment.md) is done.
+**Live:** https://atlas-ai-lake-sigma.vercel.app (frontend on Vercel; API and
+worker on Google Cloud Run; Supabase; Qdrant Cloud; Google Gemini through its
+OpenAI-compatible API). Create an account to try it; see
+[docs/deployment.md](docs/deployment.md) for how it is deployed.
 
 ![Chat answer with conflict resolution and a source preview](docs/screenshots/chat-conflict-citations.png)
 

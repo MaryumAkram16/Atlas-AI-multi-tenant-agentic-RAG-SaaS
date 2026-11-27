@@ -12,7 +12,7 @@ import httpx
 from app.config import Settings
 from app.retrieval.sparse import tokenize
 from app.services.answering import INSUFFICIENT_EVIDENCE_ANSWER
-from app.services.retry import RETRYABLE_STATUS, backoff
+from app.services.retry import RETRYABLE_STATUS, ProviderError, backoff
 
 
 @dataclass(frozen=True)
@@ -99,7 +99,7 @@ class OpenAIChatLLM:
                     continue
                 if resp.status_code >= 400:
                     # Status only: bodies can echo prompt (document) text.
-                    raise RuntimeError(f"chat completion failed with status {resp.status_code}")
+                    raise ProviderError("chat completion", resp.status_code)
                 async for event in self._events(resp):
                     yield event
                 return

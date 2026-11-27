@@ -64,8 +64,8 @@ stored as `OPENAI_API_KEY`), and set:
 | Variable | Value |
 |---|---|
 | `OPENAI_BASE_URL` | `https://generativelanguage.googleapis.com/v1beta/openai` |
-| `LLM_MODEL` | a current Gemini Flash model: `gemini-3.8-flash` (verified 2026-11-27; older ones are retired for new keys) |
-| `LLM_REASONING_EFFORT` | `low` (Gemini models "think" first; the agent already plans) |
+| `LLM_MODEL` | `gemini-3.5-flash-lite` (used in production since 2026-11-27: about 1 s per call on the free tier, where `gemini-3.8-flash` took over 2 minutes and timed out) |
+| `LLM_REASONING_EFFORT` | leave unset for Flash-Lite; `low` only for the larger "thinking" Flash models |
 | `LLM_MAX_TOKENS` | `2048` (thinking tokens can count toward the limit) |
 | `AGENT_REASONER` | `heuristic` (planning and evidence checks without the model: one model call per answer instead of 4-7) |
 | `AGENT_TIMEOUT_SECONDS` | `120` (thinking models are slower; Cloud Run allows up to 300) |

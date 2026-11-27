@@ -88,3 +88,21 @@ def test_embedder_rejects_a_wrong_number_of_vectors():
     )
     with pytest.raises(RuntimeError, match="expected 2"):
         emb.embed(["a", "b"])
+
+
+def test_provider_errors_carry_only_the_status():
+    from app.services.retry import ProviderError
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(400, json={"error": "echoes the prompt: secret text"})
+
+    emb = OpenAIEmbedder(
+        api_key="k",
+        model="m",
+        dimensions=1,
+        client=httpx.Client(transport=httpx.MockTransport(handler)),
+    )
+    with pytest.raises(ProviderError) as info:
+        emb.embed(["secret text"])
+    assert info.value.status == 400
+    assert "secret" not in str(info.value)
