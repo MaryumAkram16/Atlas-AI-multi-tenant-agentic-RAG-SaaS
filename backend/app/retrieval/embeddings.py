@@ -37,6 +37,18 @@ class HashEmbedder:
         return out
 
 
+def _ordered_embeddings(data: list[dict], expected: int) -> list[list[float]]:
+    """Embeddings in input order. Some OpenAI-compatible APIs (Gemini) omit
+    `"index": 0`, as zero is the default value, so a missing index means 0;
+    duplicates fall back to response order."""
+    if len(data) != expected:
+        raise RuntimeError(f"embedding response has {len(data)} vectors, expected {expected}")
+    indexes = [d.get("index", 0) for d in data]
+    if sorted(indexes) == list(range(expected)):
+        data = [d for _, d in sorted(zip(indexes, data, strict=True), key=lambda p: p[0])]
+    return [d["embedding"] for d in data]
+
+
 class OpenAIEmbedder:
     def __init__(
         self,
@@ -72,8 +84,7 @@ class OpenAIEmbedder:
             if resp.status_code >= 400:
                 # Status only: response bodies can echo input text.
                 raise RuntimeError(f"embedding request failed with status {resp.status_code}")
-            data = sorted(resp.json()["data"], key=lambda d: d["index"])
-            vectors.extend(d["embedding"] for d in data)
+            vectors.extend(_ordered_embeddings(resp.json().get("data") or [], len(batch)))
         return vectors
 
 

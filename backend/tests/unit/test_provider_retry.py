@@ -50,3 +50,41 @@ def test_embedder_gives_up_after_bounded_retries():
     with pytest.raises(RuntimeError, match="503"):
         emb.embed(["hello"])
     assert calls["n"] == 3
+
+
+def test_embedder_handles_missing_zero_index_like_gemini():
+    """Gemini omits "index": 0 (the default) and may return items out of order."""
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            json={
+                "data": [
+                    {"index": 2, "embedding": [3.0]},
+                    {"embedding": [1.0]},
+                    {"index": 1, "embedding": [2.0]},
+                ]
+            },
+        )
+
+    emb = OpenAIEmbedder(
+        api_key="k",
+        model="m",
+        dimensions=1,
+        client=httpx.Client(transport=httpx.MockTransport(handler)),
+    )
+    assert emb.embed(["a", "b", "c"]) == [[1.0], [2.0], [3.0]]
+
+
+def test_embedder_rejects_a_wrong_number_of_vectors():
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json={"data": [{"embedding": [1.0]}]})
+
+    emb = OpenAIEmbedder(
+        api_key="k",
+        model="m",
+        dimensions=1,
+        client=httpx.Client(transport=httpx.MockTransport(handler)),
+    )
+    with pytest.raises(RuntimeError, match="expected 2"):
+        emb.embed(["a", "b"])
