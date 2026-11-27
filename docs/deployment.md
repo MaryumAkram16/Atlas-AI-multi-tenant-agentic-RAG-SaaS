@@ -55,6 +55,21 @@ Settings → Environments → `production` → Variables:
 | `LLM_MODEL` (optional) | `gpt-4o-mini` |
 | `LLM_INPUT_PRICE_PER_1M`, `LLM_OUTPUT_PRICE_PER_1M` (optional) | from your provider's price list |
 | `API_MAX_INSTANCES` (optional) | `3` |
+| `OPENAI_BASE_URL`, `EMBEDDING_MODEL`, `EMBEDDING_DIMENSIONS` (optional) | another OpenAI-compatible provider; see below |
+
+**Using Google Gemini instead of OpenAI.** Gemini offers an OpenAI-compatible
+API. Paste the Gemini API key where `setup.sh` asks for the OpenAI key (it is
+stored as `OPENAI_API_KEY`), and set:
+
+| Variable | Value |
+|---|---|
+| `OPENAI_BASE_URL` | `https://generativelanguage.googleapis.com/v1beta/openai` |
+| `LLM_MODEL` | a current Gemini Flash model, e.g. `gemini-2.5-flash` |
+| `EMBEDDING_MODEL` | `gemini-embedding-001` |
+| `EMBEDDING_DIMENSIONS` | `1536` (keep it fixed: the Qdrant collection is created with this size) |
+
+Choose the embedding model before uploading documents; switching later means
+reindexing everything.
 
 Optionally require a reviewer on the environment so deploys need approval.
 
