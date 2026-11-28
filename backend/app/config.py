@@ -97,6 +97,10 @@ class Settings(BaseSettings):
     agent_reasoner: Literal["auto", "llm", "heuristic"] = "auto"
     agent_max_evidence_tokens: int = Field(default=6000, ge=500)
     agent_sufficient_coverage: float = Field(default=0.6, gt=0, le=1)
+    # After rewrites, weak evidence: "abstain" at once, or "answer" and let the
+    # model abstain if the sources do not contain it (suits real LLMs, whose
+    # wording rarely matches the rule-based coverage check word for word).
+    agent_weak_evidence: Literal["abstain", "answer"] = "abstain"
     # Stage switches, used by the ablation benchmark (all on in production).
     agent_enable_rewrite: bool = True
     agent_enable_conflicts: bool = True

@@ -187,6 +187,14 @@ def detect_conflicts(
     return conflicts
 
 
+def _plural(value: str) -> str:
+    """'30 day' -> '30 days' for readable notes (units are stored singular)."""
+    number, _, unit = value.partition(" ")
+    if unit and unit not in ("%", "usd") and number != "1" and not unit.endswith("s"):
+        return f"{number} {unit}s"
+    return value
+
+
 def resolve(conflict: Conflict, metas: dict[UUID, DocMeta]) -> Conflict:
     docs = {d.document_id: replace(d) for d in conflict.documents}
     by_policy = {metas[d].policy_id: d for d in docs if metas[d].policy_id}
@@ -196,7 +204,8 @@ def resolve(conflict: Conflict, metas: dict[UUID, DocMeta]) -> Conflict:
         meta = metas[d]
         if meta.outdated:
             cd.status, cd.reason = "outdated", "document is marked outdated"
-            notes.append(f"{_label(meta)} is marked outdated.")
+            stated = f" (it states {', '.join(_plural(v) for v in cd.values)})" if cd.values else ""
+            notes.append(f"{_label(meta)} is marked outdated{stated}; it is not among the sources.")
         for old in meta.supersedes:
             if old in by_policy and docs[by_policy[old]].status == "current":
                 target = docs[by_policy[old]]

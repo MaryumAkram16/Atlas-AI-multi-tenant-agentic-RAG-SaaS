@@ -141,3 +141,14 @@ def test_one_shared_common_word_is_not_a_conflict():
     (conflict,) = detect_conflicts(evidence, m, salient_terms(q))
     assert retention.document_id not in {d.document_id for d in conflict.documents}
     assert HB.document_id in {d.document_id for d in conflict.documents}
+
+
+def test_outdated_note_says_what_the_document_stated():
+    """The model never sees an outdated source, so the note carries its figures."""
+    evidence = [R26, HB]
+    m = metas(*evidence)
+    q = "Can agents approve refunds requested 25 days after purchase?"
+    (conflict,) = detect_conflicts(evidence, m, salient_terms(q))
+    notes = resolve(conflict, m).notes
+    outdated = next(n for n in notes if "outdated" in n)
+    assert "it states 30 days" in outdated and "not among the sources" in outdated

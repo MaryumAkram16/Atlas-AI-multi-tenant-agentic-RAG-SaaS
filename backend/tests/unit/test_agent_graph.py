@@ -333,3 +333,15 @@ async def test_new_topic_in_a_conversation_is_not_dragged_back(corpus):
     )
     assert state.get("standalone_question") is None
     assert "60 USD" in state["answer"]
+
+
+def test_weak_evidence_after_rewrites_abstains_or_answers_by_setting():
+    from app.agents.graph import FINAL, after_assess
+
+    weak = {"evidence_status": "weak", "attempts": 3}
+    none = {"evidence_status": "none", "attempts": 3}
+    assert after_assess(weak, max_rewrites=2) == FINAL  # default: abstain
+    assert after_assess(weak, max_rewrites=2, weak_answer=True) == "detect_conflicts"
+    assert after_assess(none, max_rewrites=2, weak_answer=True) == FINAL  # nothing found
+    early = {"evidence_status": "weak", "attempts": 1}
+    assert after_assess(early, max_rewrites=2, weak_answer=True) == "rewrite_query"  # rewrite first

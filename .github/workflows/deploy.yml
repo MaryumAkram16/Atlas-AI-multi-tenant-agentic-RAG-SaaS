@@ -65,6 +65,7 @@ jobs:
           LLM_MAX_TOKENS: ${{ vars.LLM_MAX_TOKENS }}
           AGENT_REASONER: ${{ vars.AGENT_REASONER }}
           AGENT_TIMEOUT_SECONDS: ${{ vars.AGENT_TIMEOUT_SECONDS }}
+          AGENT_WEAK_EVIDENCE: ${{ vars.AGENT_WEAK_EVIDENCE }}
         run: |
           python3 - <<'PY'
           import json, os
@@ -87,7 +88,8 @@ jobs:
           }
           for key in ("LLM_INPUT_PRICE_PER_1M", "LLM_OUTPUT_PRICE_PER_1M", "OPENAI_BASE_URL",
                       "EMBEDDING_MODEL", "EMBEDDING_DIMENSIONS", "LLM_REASONING_EFFORT",
-                      "LLM_MAX_TOKENS", "AGENT_REASONER", "AGENT_TIMEOUT_SECONDS"):
+                      "LLM_MAX_TOKENS", "AGENT_REASONER", "AGENT_TIMEOUT_SECONDS",
+                      "AGENT_WEAK_EVIDENCE"):
               if os.environ.get(key):
                   env[key] = os.environ[key]
           with open("runtime-env.yaml", "w") as f:

@@ -39,7 +39,9 @@ def after_classify(state: AgentState) -> str:
     return "plan_retrieval"  # knowledge and comparison questions must retrieve
 
 
-def after_assess(state: AgentState, max_rewrites: int, enable_rewrite: bool = True) -> str:
+def after_assess(
+    state: AgentState, max_rewrites: int, enable_rewrite: bool = True, weak_answer: bool = False
+) -> str:
     if _halted(state):
         return FINAL
     if state.get("evidence_status") == "sufficient":
@@ -49,6 +51,11 @@ def after_assess(state: AgentState, max_rewrites: int, enable_rewrite: bool = Tr
         return FINAL if state.get("evidence_status") == "none" else "detect_conflicts"
     if state.get("attempts", 0) <= max_rewrites:
         return "rewrite_query"
+    if weak_answer and state.get("evidence_status") == "weak":
+        # Rewrites exhausted but some evidence was found: let the model decide
+        # (it abstains when the sources do not contain the answer), and the
+        # citation check still removes unsupported claims.
+        return "detect_conflicts"
     return FINAL
 
 
@@ -63,7 +70,7 @@ def _guard(next_node: str):
 
 
 @lru_cache(maxsize=8)
-def build_graph(max_rewrites: int, enable_rewrite: bool = True):
+def build_graph(max_rewrites: int, enable_rewrite: bool = True, weak_answer: bool = False):
     g = StateGraph(AgentState)
     for fn in (
         n.validate_context,
@@ -99,7 +106,7 @@ def build_graph(max_rewrites: int, enable_rewrite: bool = True):
     ]:
         g.add_conditional_edges(a, _guard(b))
     g.add_conditional_edges(
-        "assess_evidence", lambda s: after_assess(s, max_rewrites, enable_rewrite)
+        "assess_evidence", lambda s: after_assess(s, max_rewrites, enable_rewrite, weak_answer)
     )
     g.add_conditional_edges("verify_citations", after_verify)
     g.add_edge(FINAL, END)
@@ -121,7 +128,11 @@ async def run_agent(
         "trace": [],
         "usage": [],
     }
-    graph = build_graph(settings.agent_max_rewrites, settings.agent_enable_rewrite)
+    graph = build_graph(
+        settings.agent_max_rewrites,
+        settings.agent_enable_rewrite,
+        settings.agent_weak_evidence == "answer",
+    )
     config = {
         "configurable": {"deps": deps},
         "recursion_limit": settings.agent_max_steps + 10,
