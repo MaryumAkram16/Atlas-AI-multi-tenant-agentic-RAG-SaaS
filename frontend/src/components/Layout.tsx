@@ -59,13 +59,21 @@ export function Layout() {
           <span className="muted small" title={email ?? ""}>
             {isAnonymous ? "Demo visitor" : email}
           </span>
-          <ThemeToggle />
-          <button className="btn btn-ghost" onClick={() => void signOut()}>
-            Sign out
-          </button>
         </div>
       </aside>
       <main className="main">
+        <header className="topbar">
+          <span className="topbar-title">{org?.name ?? "Workspace"}</span>
+          <div className="row topbar-actions">
+            <span className="muted small topbar-user" title={email ?? ""}>
+              {isAnonymous ? "Demo visitor" : email}
+            </span>
+            <ThemeToggle />
+            <button className="btn btn-signout" onClick={() => void signOut().then(() => navigate("/"))}>
+              Sign out
+            </button>
+          </div>
+        </header>
         {isAnonymous && (
           <div className="banner banner-info demo-banner" role="note">
             Demo workspace with sample documents: ask questions and open sources; uploads are off

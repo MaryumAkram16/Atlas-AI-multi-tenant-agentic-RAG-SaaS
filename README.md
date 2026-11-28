@@ -1,5 +1,10 @@
 # Atlas AI
 
+[![CI](https://github.com/MaryumAkram16/Atlas-AI-multi-tenant-agentic-RAG-SaaS/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/MaryumAkram16/Atlas-AI-multi-tenant-agentic-RAG-SaaS/actions/workflows/ci.yml)
+[![Deploy](https://github.com/MaryumAkram16/Atlas-AI-multi-tenant-agentic-RAG-SaaS/actions/workflows/deploy.yml/badge.svg?branch=main)](https://github.com/MaryumAkram16/Atlas-AI-multi-tenant-agentic-RAG-SaaS/actions/workflows/deploy.yml)
+![Backend tests](https://img.shields.io/badge/backend_tests-403_passing-10b981)
+![Frontend tests](https://img.shields.io/badge/frontend_tests-23_unit_%2B_2_e2e-10b981)
+
 Multi-tenant agentic RAG SaaS. Companies sign up, create an organization,
 invite members, upload documents (PDF, DOCX, TXT, MD) and ask questions.
 Answers cite their sources, flag conflicting policy versions, and say so when
@@ -11,7 +16,16 @@ worker on Google Cloud Run; Supabase; Qdrant Cloud; Google Gemini through its
 OpenAI-compatible API). Create an account to try it; see
 [docs/deployment.md](docs/deployment.md) for how it is deployed.
 
-![Chat answer with conflict resolution and a source preview](docs/screenshots/chat-conflict-citations.png)
+| Landing page | Cited answer with conflicts resolved |
+|---|---|
+| ![Atlas landing page](docs/screenshots/landing.png) | ![Chat answer with citations and conflict resolution](docs/screenshots/chat-app.png) |
+| **"Why this answer?"** | **Evaluations on your own documents** |
+| ![Why this answer panel](docs/screenshots/why-this-answer.png) | ![Evaluations page](docs/screenshots/evaluations.png) |
+
+Test counts are from the last full local run (2026-11-28): 403 backend tests
+(unit, integration, security; 6 skipped need a running stack or network), 23
+frontend unit tests and 2 Playwright end-to-end flows. CI runs all of them on
+every push.
 
 ## What it does
 

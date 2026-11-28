@@ -10,6 +10,7 @@ import { ChatPage } from "./pages/ChatPage";
 import { DemoPage } from "./pages/DemoPage";
 import { EvaluationsPage } from "./pages/EvaluationsPage";
 import { InvitePage } from "./pages/InvitePage";
+import { LandingPage } from "./pages/LandingPage";
 import { KnowledgeBasePage } from "./pages/KnowledgeBasePage";
 import { MembersPage } from "./pages/MembersPage";
 import { OrgPickerPage } from "./pages/OrgPickerPage";
@@ -26,6 +27,14 @@ function RequireAuth({ children }: { children: ReactNode }) {
   return <OrgsProvider>{children}</OrgsProvider>;
 }
 
+/** Visitors see the landing page; signed-in users go to their workspaces. */
+function Home() {
+  const { session, loading } = useAuth();
+  if (loading) return <div className="center"><Spinner /></div>;
+  if (!session) return <LandingPage />;
+  return <OrgsProvider><OrgPickerPage /></OrgsProvider>;
+}
+
 export function App() {
   return (
     <AuthProvider>
@@ -35,7 +44,7 @@ export function App() {
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/demo" element={<DemoPage />} />
           <Route path="/invite/:token" element={<RequireAuth><InvitePage /></RequireAuth>} />
-          <Route path="/" element={<RequireAuth><OrgPickerPage /></RequireAuth>} />
+          <Route path="/" element={<Home />} />
           <Route path="/workspaces" element={<RequireAuth><OrgPickerPage forceList /></RequireAuth>} />
           <Route path="/o/:orgId" element={<RequireAuth><Layout /></RequireAuth>}>
             <Route index element={<Navigate to="chat" replace />} />
