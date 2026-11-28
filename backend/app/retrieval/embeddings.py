@@ -98,4 +98,7 @@ def build_embedder(settings: Settings) -> Embedder:
         model=settings.embedding_model,
         dimensions=settings.embedding_dimensions,
         base_url=settings.openai_base_url,
+        batch_size=settings.embedding_batch_size,
+        max_retries=settings.provider_max_retries,
+        retry_base_delay=settings.provider_retry_base_seconds,
     )

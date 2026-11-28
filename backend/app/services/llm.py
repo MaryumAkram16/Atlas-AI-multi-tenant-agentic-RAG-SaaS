@@ -180,4 +180,6 @@ def build_llm(settings: Settings) -> ChatLLM:
         base_url=settings.openai_base_url,
         timeout=settings.llm_timeout_seconds,
         reasoning_effort=settings.llm_reasoning_effort,
+        max_retries=settings.provider_max_retries,
+        retry_base_delay=settings.provider_retry_base_seconds,
     )

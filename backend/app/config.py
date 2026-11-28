@@ -64,6 +64,10 @@ class Settings(BaseSettings):
     embedding_dimensions: int = Field(default=1536, ge=8)
     openai_api_key: SecretStr | None = None
     openai_base_url: str = "https://api.openai.com/v1"
+    embedding_batch_size: int = Field(default=64, ge=1, le=2048)
+    # Retries for busy/rate-limited provider calls (429/5xx), exponential backoff.
+    provider_max_retries: int = Field(default=3, ge=0, le=10)
+    provider_retry_base_seconds: float = Field(default=1.0, ge=0)
 
     # Retrieval and answering
     retrieval_dense_k: int = Field(default=20, ge=1, le=100)
