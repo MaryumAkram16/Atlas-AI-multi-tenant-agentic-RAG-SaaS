@@ -254,12 +254,25 @@ def _summary(rows: list[dict], settings: Settings) -> dict:
     }
 
 
-async def run(settings: Settings, dataset: Path, corpus: Path, configs=None) -> dict:
+async def run(
+    settings: Settings,
+    dataset: Path,
+    corpus: Path,
+    configs=None,
+    *,
+    limit: int | None = None,
+    delay: float = 0.0,
+    judge: bool = True,
+) -> dict:
+    """`limit` keeps the first N questions; `delay` pauses between questions
+    (free-tier rate limits); `judge=False` skips the LLM-judge calls."""
     configs = configs or list(CONFIGS)
     settings = settings.model_copy(
         update={"qdrant_collection": f"atlas_bench_{uuid.uuid4().hex[:8]}"}
     )
     questions, source = _load(settings, dataset, corpus)
+    if limit:
+        questions = questions[:limit]
     chunks = {
         c.chunk_id: IndexedChunk(c.chunk_id, source.filenames[c.document_id], c.section or "")
         for c in source.chunks.values()
@@ -270,7 +283,7 @@ async def run(settings: Settings, dataset: Path, corpus: Path, configs=None) -> 
         build_embedder(settings),
         build_llm(settings),
     )
-    use_judge = settings.llm_provider == "openai"
+    use_judge = judge and settings.llm_provider == "openai"
     index.ensure_collection()
     try:
         _index(source, index, embedder)
@@ -294,6 +307,8 @@ async def run(settings: Settings, dataset: Path, corpus: Path, configs=None) -> 
                 if use_judge:
                     row["faithfulness_judge"] = await _judge(llm, out)
                 rows[name].append(row)
+                if delay:
+                    await asyncio.sleep(delay)
     finally:
         index.drop_collection()
     return {
@@ -401,7 +416,20 @@ def main() -> None:
     parser.add_argument("--corpus", type=Path, default=REPO / "sample-data/acme")
     parser.add_argument("--out", type=Path, default=REPO / "evaluations/reports")
     parser.add_argument("--name", default=None)
+    parser.add_argument(
+        "--configs",
+        default=None,
+        help=f"comma-separated subset of: {', '.join(CONFIGS)} (default: all)",
+    )
+    parser.add_argument("--limit", type=int, default=None, help="first N questions only")
+    parser.add_argument(
+        "--delay", type=float, default=0.0, help="seconds between questions (rate limits)"
+    )
+    parser.add_argument("--no-judge", action="store_true", help="skip LLM-judge faithfulness")
     args = parser.parse_args()
+    configs = [c.strip() for c in args.configs.split(",")] if args.configs else None
+    if configs and (unknown := set(configs) - set(CONFIGS)):
+        parser.error(f"unknown configs: {', '.join(sorted(unknown))}")
     updates = (
         {"embedding_provider": "openai", "llm_provider": "openai"}
         if args.provider == "openai"
@@ -410,7 +438,17 @@ def main() -> None:
     if args.tokenizer:
         updates["tokenizer"] = args.tokenizer
     settings = Settings().model_copy(update=updates)
-    result = asyncio.run(run(settings, args.dataset.resolve(), args.corpus.resolve()))
+    result = asyncio.run(
+        run(
+            settings,
+            args.dataset.resolve(),
+            args.corpus.resolve(),
+            configs,
+            limit=args.limit,
+            delay=args.delay,
+            judge=not args.no_judge,
+        )
+    )
     args.out.mkdir(parents=True, exist_ok=True)
     stem = args.name or f"{result['generated_at'][:10]}-full-comparison-{args.provider}"
     (args.out / f"{stem}.json").write_text(json.dumps(result, indent=2, default=str) + "\n")
