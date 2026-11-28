@@ -68,6 +68,7 @@ stored as `OPENAI_API_KEY`), and set:
 | `LLM_REASONING_EFFORT` | leave unset for Flash-Lite; `low` only for the larger "thinking" Flash models |
 | `LLM_MAX_TOKENS` | `2048` (thinking tokens can count toward the limit) |
 | `AGENT_REASONER` | `heuristic` (planning and evidence checks without the model: one model call per answer instead of 4-7) |
+| `AGENT_WEAK_EVIDENCE` | `answer` (with weak evidence after rewrites, let the model decide; measured: false abstentions 8.5% to 3.2%, correct abstentions still 100%) |
 | `AGENT_TIMEOUT_SECONDS` | `120` (thinking models are slower; Cloud Run allows up to 300) |
 | `EMBEDDING_MODEL` | `gemini-embedding-001` (verified to return 1536 dimensions) |
 | `EMBEDDING_DIMENSIONS` | `1536` (keep it fixed: the Qdrant collection is created with this size) |

@@ -10,7 +10,9 @@ configuration, dataset and corpus.
 
 | [2026-11-25-answers-offline](2026-11-25-answers-offline.md) | Week 4: baseline pipeline vs LangGraph agent (30 questions) | Offline extractive generator and hash embeddings; measures routing, conflict handling, abstention and citations, not answer quality. |
 | [2026-11-25-retrieval-105-hash](2026-11-25-retrieval-105-hash.md) | Week 6: dense vs sparse vs hybrid on 105 questions | Offline hash embeddings; 80-chunk corpus. |
-| [2026-11-25-full-comparison-offline](2026-11-25-full-comparison-offline.md) | Week 6: dense, hybrid, hybrid+rerank, +rewrite, full agent on 105 questions | Offline; faithfulness is a proxy that favours the full agent; tokens and cost are zero without a model. |
+| [2026-11-25-full-comparison-offline](2026-11-25-full-comparison-offline.md) | Week 6: dense, hybrid, hybrid+rerank, +rewrite, full agent on 105 questions (later 111) | Offline; faithfulness is a proxy that favours the full agent; tokens and cost are zero without a model. |
+| [2026-11-28-gemini-hybrid-vs-agent](2026-11-28-gemini-hybrid-vs-agent.md) | First real-model run: hybrid vs full agent, 111 questions | Gemini `gemini-3.5-flash-lite` + `gemini-embedding-001`, rule-based planning, LLM judge; before the weak-evidence fix. Free-tier rate limits inflate p95 latency. |
+| [2026-11-28-gemini-agent-fixed](2026-11-28-gemini-agent-fixed.md) | Full agent after the fixes found by the first run | Same setup with `AGENT_WEAK_EVIDENCE=answer`; compare with the hybrid column of the first run. |
 
 Observed variance: one of five runs of the baseline gave sparse MRR 0.859
 instead of 0.840 (all other metrics identical). The cause is not yet confirmed;

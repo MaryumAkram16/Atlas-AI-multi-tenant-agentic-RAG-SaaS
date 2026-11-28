@@ -64,21 +64,35 @@ every push.
 
 ## Measured results
 
-Only offline runs exist so far (no model key): hash embeddings, an extractive
-generator, an 80-chunk synthetic corpus, 111 hand-labeled questions. They
-measure behaviour, not answer quality ([details](docs/evaluation/README.md)):
+**With a real model** (Google Gemini `gemini-3.5-flash-lite`, `gemini-embedding-001`;
+111 hand-labeled questions over an 80-chunk synthetic policy corpus; run
+2026-11-28; [report](evaluations/reports/2026-11-28-gemini-agent-fixed.md)):
 
 | | hybrid baseline | full agent |
 |---|---|---|
-| Cites superseded or outdated sources (conflict questions) | 93.8% | **0%** |
-| Abstains when the documents don't contain the answer | 68.8% | **87.5%** |
-| Resists injected instructions in documents | 75% | **100%** |
-| Fact accuracy (string match) | 78.7% | 78.7% |
+| Cites superseded or outdated sources (conflict questions) ↓ | 81.2% | **0%** |
+| Faithfulness (independent LLM judge) | 97.5% | **100%** |
+| Citation correctness | 98.9% | **100%** |
+| Citation precision | 87.4% | **94.2%** |
+| Abstains when the documents don't contain the answer | 100% | 100% |
+| Resists injected instructions in documents | 100% | 100% |
+| Fact accuracy (answerable, string match) | **97.9%** | 96.8% |
+| Wrongly says "not enough evidence" ↓ | **1.1%** | 3.2% |
 
-Blueprint quality targets (e.g. faithfulness ≥ 90%) are **targets**, not yet
-measured with a real model. Security properties are covered by a separate
-test suite (cross-tenant access via the API and directly in Postgres, every
-endpoint swept, injection, revocation); see [docs/security](docs/security/README.md).
+The agent's value is in the first rows: with conflicting policy versions, the
+plain hybrid pipeline cites outdated documents 81% of the time; the agent never
+does. Of the blueprint quality targets, Recall@5 (≥ 85%: 97.3%), faithfulness
+(≥ 90%: 100% by LLM judge) and citation correctness (≥ 95%: 100%) are met on this
+benchmark. The latency target (p95 < 5 s) is **not** shown: this run used the
+free tier, where rate-limit waits put p95 at about 9 s (p50 1.2 s). The judge is
+the same model family as the generator, and the corpus and labels are small and
+synthetic; see the report's caveats.
+
+Offline runs (no model: hash embeddings, an extractive generator) check the same
+behaviour without a key ([details](docs/evaluation/README.md)). Security
+properties are a separate test suite (cross-tenant access via the API and
+directly in Postgres, every endpoint swept, injection, revocation); see
+[docs/security](docs/security/README.md).
 
 ## Documentation
 
@@ -209,11 +223,9 @@ Benchmarks over 111 labeled questions ([how to run](evaluations/benchmarks/READM
 retrieval (dense vs sparse vs hybrid) and a full comparison of five
 configurations (dense, hybrid, hybrid+rerank, +rewrite, full agent) for fact
 accuracy, abstention, citation correctness, faithfulness, stale citations,
-injection resistance, latency and cost. The reports so far
-([index](evaluations/reports/README.md)) were run **offline** (hash embeddings, an
-extractive generator, an 80-chunk corpus): they check behaviour such as stale
-citations and injection handling, not answer quality. Blueprint targets (e.g.
-Recall@5 ≥ 85%, faithfulness ≥ 90%) are targets, not results.
+injection resistance, latency and cost. Reports ([index](evaluations/reports/README.md))
+include offline runs (hash embeddings, an extractive generator: behaviour only)
+and real-model runs with Google Gemini (answer quality, LLM-judge faithfulness).
 
 Security tests are a separate suite (`backend/tests/security`): tenant isolation
 via the API and directly in Postgres, a sweep of every endpoint, prompt
