@@ -2,19 +2,9 @@ import { NavLink, Outlet, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { useOrgs } from "../hooks/useOrgs";
 import { can } from "../services/permissions";
+import { Logo } from "./Logo";
 import { ThemeToggle } from "./ThemeToggle";
 import { Badge } from "./ui";
-
-export function Logo() {
-  return (
-    <span className="logo">
-      <span className="logo-mark" aria-hidden>
-        ◆
-      </span>
-      Atlas AI
-    </span>
-  );
-}
 
 export function Layout() {
   const { orgId } = useParams();
@@ -26,7 +16,7 @@ export function Layout() {
   return (
     <div className="shell">
       <aside className="sidebar">
-        <Logo />
+        <Logo size={30} />
         <label className="field">
           <span className="field-label">Workspace</span>
           <select

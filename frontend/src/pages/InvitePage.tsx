@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Logo } from "../components/Layout";
+import { Logo } from "../components/Logo";
 import { ErrorBanner } from "../components/ui";
 import { useAuth } from "../hooks/useAuth";
 import { useOrgs } from "../hooks/useOrgs";
@@ -42,7 +42,7 @@ export function InvitePage() {
   return (
     <div className="auth">
       <div className="card auth-card">
-        <Logo />
+        <Logo size={34} />
         <h1>Join a workspace</h1>
         <p className="muted">
           You were invited to an Atlas AI workspace. You are signed in as <strong>{email}</strong>;

@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Logo } from "../components/Layout";
+import { Logo } from "../components/Logo";
 import { ThemeToggle } from "../components/ThemeToggle";
 import { config } from "../services/config";
 
@@ -47,7 +47,7 @@ export function LandingPage() {
     <div className="landing">
       <header className="landing-header">
         <div className="landing-container landing-nav">
-          <Logo />
+          <Logo size={32} />
           <nav className="landing-links" aria-label="Sections">
             <a href="#use-cases">Use cases</a>
             <a href="#how">How it works</a>
@@ -190,7 +190,7 @@ export function LandingPage() {
 
       <footer className="landing-footer">
         <div className="landing-container row between wrap">
-          <Logo />
+          <Logo size={26} />
           <nav className="landing-links" aria-label="Footer">
             <a href="#use-cases">Use cases</a>
             <a href="#how">How it works</a>

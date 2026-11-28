@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { Layout } from "./components/Layout";
-import { Spinner } from "./components/ui";
+import { LoadingScreen } from "./components/Logo";
 import { AuthProvider, useAuth } from "./hooks/useAuth";
 import { OrgsProvider } from "./hooks/useOrgs";
 import { LoginPage, SignupPage } from "./pages/AuthPages";
@@ -19,7 +19,7 @@ import { UsagePage } from "./pages/UsagePage";
 function RequireAuth({ children }: { children: ReactNode }) {
   const { session, loading } = useAuth();
   const location = useLocation();
-  if (loading) return <div className="center"><Spinner /></div>;
+  if (loading) return <LoadingScreen />;
   if (!session) {
     const next = encodeURIComponent(location.pathname + location.search);
     return <Navigate to={`/login?next=${next}`} replace />;
@@ -30,7 +30,7 @@ function RequireAuth({ children }: { children: ReactNode }) {
 /** Visitors see the landing page; signed-in users go to their workspaces. */
 function Home() {
   const { session, loading } = useAuth();
-  if (loading) return <div className="center"><Spinner /></div>;
+  if (loading) return <LoadingScreen />;
   if (!session) return <LandingPage />;
   return <OrgsProvider><OrgPickerPage /></OrgsProvider>;
 }

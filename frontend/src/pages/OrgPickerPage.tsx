@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
-import { Logo } from "../components/Layout";
-import { Badge, ErrorBanner, Spinner } from "../components/ui";
+import { LoadingScreen, Logo } from "../components/Logo";
+import { Badge, ErrorBanner } from "../components/ui";
 import { useAuth } from "../hooks/useAuth";
 import { useOrgs } from "../hooks/useOrgs";
 import { apiRequest } from "../services/api";
@@ -16,7 +16,7 @@ export function OrgPickerPage({ forceList = false }: { forceList?: boolean }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  if (loading) return <div className="center"><Spinner /></div>;
+  if (loading) return <LoadingScreen />;
   if (!forceList && orgs.length === 1) return <Navigate to={`/o/${orgs[0].id}/chat`} replace />;
 
   async function create(e: FormEvent) {
@@ -40,7 +40,7 @@ export function OrgPickerPage({ forceList = false }: { forceList?: boolean }) {
   return (
     <div className="auth">
       <div className="card auth-card wide">
-        <Logo />
+        <Logo size={34} />
         <h1>Your workspaces</h1>
         <p className="muted small">{isAnonymous ? "Demo visitor" : `Signed in as ${email}`}</p>
         {orgs.length > 0 && (

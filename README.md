@@ -1,3 +1,10 @@
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="frontend/public/brand/atlas-logo-horizontal-dark.svg">
+    <img src="frontend/public/brand/atlas-logo-horizontal-light.svg" alt="Atlas AI" height="72">
+  </picture>
+</p>
+
 # Atlas AI
 
 [![CI](https://github.com/MaryumAkram16/Atlas-AI-multi-tenant-agentic-RAG-SaaS/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/MaryumAkram16/Atlas-AI-multi-tenant-agentic-RAG-SaaS/actions/workflows/ci.yml)

@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
-import { Logo } from "../components/Layout";
+import { Logo } from "../components/Logo";
 import { ErrorBanner } from "../components/ui";
 import { useAuth } from "../hooks/useAuth";
 import { config } from "../services/config";
@@ -45,7 +45,7 @@ function AuthForm({ mode }: { mode: "login" | "signup" }) {
   return (
     <div className="auth">
       <form className="card auth-card" onSubmit={submit}>
-        <Logo />
+        <Logo size={34} />
         <h1>{mode === "login" ? "Sign in" : "Create your account"}</h1>
         <p className="muted">Grounded answers from your organization's documents.</p>
         {!config.configured && (

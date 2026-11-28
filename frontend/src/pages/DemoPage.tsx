@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
-import { Logo } from "../components/Layout";
+import { Logo } from "../components/Logo";
 import { ErrorBanner, Spinner } from "../components/ui";
 import { useAuth } from "../hooks/useAuth";
 import { apiRequest } from "../services/api";
@@ -35,7 +35,7 @@ export function DemoPage() {
   return (
     <div className="auth">
       <div className="card auth-card">
-        <Logo />
+        <Logo size={34} />
         <h1>Demo workspace</h1>
         <p className="muted">
           Sample HR, refund and IT policies with conflicting versions. You can ask questions and
